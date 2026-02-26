@@ -117,9 +117,7 @@ class DenonMarantzZoneMediaPlayer(
     CoordinatorEntity[DenonMarantzDataUpdateCoordinator],
     MediaPlayerEntity,
 ):
-    _attr_supported_features = (
-        MediaPlayerEntityFeature.TURN_ON | MediaPlayerEntityFeature.TURN_OFF
-    )
+    _attr_source_list = ["CD", "TV", "SAT/CBL", "GAME", "AUX", "BLUETOOTH", "TUNER"]
 
     def __init__(
         self,
@@ -136,6 +134,24 @@ class DenonMarantzZoneMediaPlayer(
         self._attr_unique_id = f"{entry.entry_id}_zone_{zone}"
 
     @property
+    def supported_features(self) -> MediaPlayerEntityFeature:
+        features = MediaPlayerEntityFeature.TURN_ON | MediaPlayerEntityFeature.TURN_OFF
+        if not self.coordinator.data:
+            return features
+
+        caps_key = "zone2_capabilities" if self._zone == "2" else "zone3_capabilities"
+        caps = self.coordinator.data.get(caps_key) or {}
+
+        if caps.get("volume"):
+            features |= MediaPlayerEntityFeature.VOLUME_STEP
+        if caps.get("mute"):
+            features |= MediaPlayerEntityFeature.VOLUME_MUTE
+        if caps.get("source"):
+            features |= MediaPlayerEntityFeature.SELECT_SOURCE
+
+        return features
+
+    @property
     def state(self) -> MediaPlayerState:
         if not self.coordinator.data:
             return MediaPlayerState.OFF
@@ -144,10 +160,47 @@ class DenonMarantzZoneMediaPlayer(
         zone_power = self.coordinator.data.get(zone_key)
         return MediaPlayerState.ON if zone_power == "ON" else MediaPlayerState.OFF
 
+    @property
+    def volume_level(self) -> float | None:
+        if not self.coordinator.data:
+            return None
+        zone_key = "zone2_volume" if self._zone == "2" else "zone3_volume"
+        return self.coordinator.data.get(zone_key)
+
+    @property
+    def is_volume_muted(self) -> bool | None:
+        if not self.coordinator.data:
+            return None
+        zone_key = "zone2_muted" if self._zone == "2" else "zone3_muted"
+        return self.coordinator.data.get(zone_key)
+
+    @property
+    def source(self) -> str | None:
+        if not self.coordinator.data:
+            return None
+        zone_key = "zone2_source" if self._zone == "2" else "zone3_source"
+        return self.coordinator.data.get(zone_key)
+
     async def async_turn_on(self) -> None:
         await self._client.async_set_zone_power(self._zone, True)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self) -> None:
         await self._client.async_set_zone_power(self._zone, False)
+        await self.coordinator.async_request_refresh()
+
+    async def async_volume_up(self) -> None:
+        await self._client.async_zone_volume_up(self._zone)
+        await self.coordinator.async_request_refresh()
+
+    async def async_volume_down(self) -> None:
+        await self._client.async_zone_volume_down(self._zone)
+        await self.coordinator.async_request_refresh()
+
+    async def async_mute_volume(self, mute: bool) -> None:
+        await self._client.async_set_zone_mute(self._zone, mute)
+        await self.coordinator.async_request_refresh()
+
+    async def async_select_source(self, source: str) -> None:
+        await self._client.async_set_zone_source(self._zone, source)
         await self.coordinator.async_request_refresh()
