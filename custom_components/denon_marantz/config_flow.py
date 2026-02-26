@@ -14,6 +14,11 @@ from .const import CONF_PORT, DEFAULT_NAME, DEFAULT_PORT, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+UPNP_MANUFACTURER_KEYS = ("manufacturer", "upnp_manufacturer")
+UPNP_MODEL_NAME_KEYS = ("modelName", "model_name", "upnp_model_name")
+UPNP_DEVICE_TYPE_KEYS = ("deviceType", "device_type", "upnp_device_type")
+UPNP_FRIENDLY_NAME_KEYS = ("friendlyName", "friendly_name", "upnp_friendly_name")
+
 
 class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
@@ -46,10 +51,10 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ssdp.ATTR_SSDP_LOCATION,
             "ssdp_location",
         )
-        manufacturer = self._get_upnp_value(discovery_info, ssdp.ATTR_UPNP_MANUFACTURER)
-        model = self._get_upnp_value(discovery_info, ssdp.ATTR_UPNP_MODEL_NAME)
-        device_type = self._get_upnp_value(discovery_info, ssdp.ATTR_UPNP_DEVICE_TYPE)
-        friendly_name = self._get_upnp_value(discovery_info, ssdp.ATTR_UPNP_FRIENDLY_NAME)
+        manufacturer = self._get_upnp_value(discovery_info, UPNP_MANUFACTURER_KEYS)
+        model = self._get_upnp_value(discovery_info, UPNP_MODEL_NAME_KEYS)
+        device_type = self._get_upnp_value(discovery_info, UPNP_DEVICE_TYPE_KEYS)
+        friendly_name = self._get_upnp_value(discovery_info, UPNP_FRIENDLY_NAME_KEYS)
 
         _LOGGER.debug(
             "SSDP discovery candidate: st=%s usn=%s location=%s manufacturer=%s model=%s device_type=%s friendly_name=%s",
@@ -132,13 +137,17 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return None
 
     @staticmethod
-    def _get_upnp_value(discovery_info: ssdp.SsdpServiceInfo, key: str) -> str | None:
+    def _get_upnp_value(discovery_info: ssdp.SsdpServiceInfo, keys: tuple[str, ...]) -> str | None:
         upnp_data = getattr(discovery_info, "upnp", None)
-        if upnp_data is None or not hasattr(upnp_data, "get"):
-            return None
+        if upnp_data is not None and hasattr(upnp_data, "get"):
+            for key in keys:
+                value = upnp_data.get(key)
+                if value:
+                    return str(value)
 
-        value = upnp_data.get(key)
-        if not value:
-            return None
+        for key in keys:
+            value = getattr(discovery_info, key, None)
+            if value:
+                return str(value)
 
-        return str(value)
+        return None
