@@ -34,6 +34,7 @@ class DenonMarantzDiagnosticSensor(
     SensorEntity,
 ):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_has_entity_name = True
 
     def __init__(
         self,
@@ -44,7 +45,7 @@ class DenonMarantzDiagnosticSensor(
         super().__init__(coordinator)
         self._key = key
         self._attr_unique_id = f"{entry.entry_id}_{key}"
-        self._attr_name = key.replace("_", " ").title()
+        self._attr_translation_key = key
 
     @property
     def native_value(self) -> str | bool | None:
