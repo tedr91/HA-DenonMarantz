@@ -18,6 +18,11 @@ Home Assistant custom integration for Denon and Marantz AV receivers based on th
     - Volume step
     - Mute
     - Source select
+- Diagnostic sensors
+  - `sensor.zone2_supported`
+  - `sensor.zone3_supported`
+  - `sensor.zone2_capabilities` (comma-separated list)
+  - `sensor.zone3_capabilities` (comma-separated list)
 
 ## Project structure
 
