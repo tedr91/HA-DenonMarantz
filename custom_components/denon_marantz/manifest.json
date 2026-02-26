@@ -58,9 +58,29 @@
       "manufacturer": "Marantz"
     }
   ],
+  "dhcp": [
+    {
+      "hostname": "*denon*"
+    },
+    {
+      "hostname": "*Denon*"
+    },
+    {
+      "hostname": "*DENON*"
+    },
+    {
+      "hostname": "*marantz*"
+    },
+    {
+      "hostname": "*Marantz*"
+    },
+    {
+      "hostname": "*MARANTZ*"
+    }
+  ],
   "loggers": [
     "custom_components.denon_marantz"
   ],
   "requirements": [],
-  "version": "0.1.6"
+  "version": "0.1.7"
 }

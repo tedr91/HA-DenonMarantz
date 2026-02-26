@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.components import dhcp
 from homeassistant.components import ssdp
 from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.data_entry_flow import FlowResult
@@ -87,6 +88,36 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         _LOGGER.debug(
             "SSDP discovery accepted: host=%s name=%s",
+            self._discovered_host,
+            self._discovered_name,
+        )
+
+        return await self.async_step_confirm()
+
+    async def async_step_dhcp(self, discovery_info: dhcp.DhcpServiceInfo) -> FlowResult:
+        host = str(getattr(discovery_info, "ip", "") or "")
+        hostname = str(getattr(discovery_info, "hostname", "") or "")
+
+        _LOGGER.debug(
+            "DHCP discovery candidate: ip=%s hostname=%s",
+            host,
+            hostname,
+        )
+
+        if not host:
+            _LOGGER.debug("DHCP discovery rejected: missing IP")
+            return self.async_abort(reason="cannot_connect")
+
+        self._async_abort_entries_match({CONF_HOST: host})
+
+        await self.async_set_unique_id(host)
+        self._abort_if_unique_id_configured()
+
+        self._discovered_host = host
+        self._discovered_name = hostname or f"{DEFAULT_NAME} ({host})"
+
+        _LOGGER.debug(
+            "DHCP discovery accepted: host=%s name=%s",
             self._discovered_host,
             self._discovered_name,
         )
