@@ -1,0 +1,40 @@
+# HA-DenonMarantz
+
+Home Assistant custom integration for Denon and Marantz AV receivers based on the Denon AVR command protocol.
+
+## Features (starter)
+
+- Local network control over TCP
+- Power on/off
+- Volume control
+- Input selection
+- Media player entity in Home Assistant
+
+## Project structure
+
+```text
+custom_components/
+  denon_marantz/
+    __init__.py
+    manifest.json
+    config_flow.py
+    const.py
+    coordinator.py
+    denon_protocol.py
+    media_player.py
+    strings.json
+    translations/
+      en.json
+```
+
+## Local install in Home Assistant
+
+1. Copy `custom_components/denon_marantz` into your Home Assistant `config/custom_components/` folder.
+2. Restart Home Assistant.
+3. Go to **Settings → Devices & Services → Add Integration**.
+4. Search for **Denon Marantz AVR** and enter host/port.
+
+## Notes
+
+- Default AVR control port is typically `23` (telnet-like protocol).
+- This is an MVP scaffold intended as a base for protocol expansion.

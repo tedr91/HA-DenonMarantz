@@ -1,0 +1,12 @@
+[project]
+name = "ha-denonmarantz"
+version = "0.1.0"
+description = "Home Assistant custom integration for Denon and Marantz AVRs"
+readme = "README.md"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
