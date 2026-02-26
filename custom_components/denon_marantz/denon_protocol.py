@@ -33,6 +33,18 @@ class DenonMarantzClient:
         self._reader = None
         self._writer = None
 
+    async def _async_reset_connection(self) -> None:
+        writer = self._writer
+        self._reader = None
+        self._writer = None
+        if writer is None:
+            return
+        writer.close()
+        try:
+            await writer.wait_closed()
+        except Exception:
+            return
+
     async def _async_send(
         self,
         command: str,
@@ -40,39 +52,66 @@ class DenonMarantzClient:
         expected_prefixes: tuple[str, ...] | None = None,
     ) -> str:
         async with self._lock:
-            await self.connect()
-
-            assert self._writer is not None
-            assert self._reader is not None
-
             expected = tuple(
                 prefix.upper() for prefix in (expected_prefixes or self._expected_prefixes(command))
             )
-            loop = asyncio.get_running_loop()
-            deadline = loop.time() + timeout
 
-            self._writer.write(f"{command}\r".encode("ascii"))
-            await self._writer.drain()
-            while True:
-                remaining = deadline - loop.time()
-                if remaining <= 0:
-                    raise TimeoutError(f"Timeout waiting for response to '{command}'")
+            last_error: Exception | None = None
+            for attempt in (1, 2):
+                try:
+                    await self.connect()
+                    return await self._async_send_once(command, timeout, expected)
+                except (ConnectionError, OSError, asyncio.IncompleteReadError) as err:
+                    last_error = err
+                    await self._async_reset_connection()
+                    if attempt == 1:
+                        self.logger.debug(
+                            "Transient AVR connection error on %s; retrying once: %s",
+                            command,
+                            err,
+                        )
+                        continue
+                    raise
 
-                response = await asyncio.wait_for(self._reader.readuntil(b"\r"), timeout=remaining)
-                decoded = response.decode("ascii", errors="ignore").strip()
-                upper = decoded.upper()
+            if last_error is not None:
+                raise last_error
 
-                if upper.startswith("E"):
-                    return decoded
+            raise RuntimeError("Unexpected protocol send state")
 
-                if any(upper.startswith(prefix) for prefix in expected):
-                    return decoded
+    async def _async_send_once(
+        self,
+        command: str,
+        timeout: float,
+        expected: tuple[str, ...],
+    ) -> str:
+        assert self._writer is not None
+        assert self._reader is not None
 
-                self.logger.debug(
-                    "Discarding unsolicited AVR line while waiting for %s: %s",
-                    command,
-                    decoded,
-                )
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout
+
+        self._writer.write(f"{command}\r".encode("ascii"))
+        await self._writer.drain()
+        while True:
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                raise TimeoutError(f"Timeout waiting for response to '{command}'")
+
+            response = await asyncio.wait_for(self._reader.readuntil(b"\r"), timeout=remaining)
+            decoded = response.decode("ascii", errors="ignore").strip()
+            upper = decoded.upper()
+
+            if upper.startswith("E"):
+                return decoded
+
+            if any(upper.startswith(prefix) for prefix in expected):
+                return decoded
+
+            self.logger.debug(
+                "Discarding unsolicited AVR line while waiting for %s: %s",
+                command,
+                decoded,
+            )
 
     @staticmethod
     def _expected_prefixes(command: str) -> tuple[str, ...]:
