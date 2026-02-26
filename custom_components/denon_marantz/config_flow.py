@@ -137,11 +137,13 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }
             return self.async_create_entry(title=entry_data[CONF_NAME], data=entry_data)
 
-        self.context["title_placeholders"] = {
-            "name": self._discovered_name or DEFAULT_NAME,
-            "host": self._discovered_host or "",
-        }
-        return self.async_show_form(step_id="confirm")
+        return self.async_show_form(
+            step_id="confirm",
+            description_placeholders={
+                "name": self._discovered_name or DEFAULT_NAME,
+                "host": self._discovered_host or "",
+            },
+        )
 
     @staticmethod
     def _get_ssdp_value(
