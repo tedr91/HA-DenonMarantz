@@ -3,3 +3,15 @@ DEFAULT_NAME = "Denon Marantz AVR"
 DEFAULT_PORT = 23
 
 CONF_PORT = "port"
+
+DEFAULT_SOUND_MODES: list[str] = [
+	"STEREO",
+	"DIRECT",
+	"PURE DIRECT",
+	"DOLBY DIGITAL",
+	"DTS SURROUND",
+	"MUSIC",
+	"MOVIE",
+	"GAME",
+	"AURO3D",
+]

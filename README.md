@@ -2,13 +2,14 @@
 
 Home Assistant custom integration for Denon and Marantz AV receivers based on the Denon AVR command protocol.
 
-## Features (starter)
+## MVP entities
 
-- Local network control over TCP
-- Power on/off
-- Volume control
-- Input selection
-- Media player entity in Home Assistant
+- `media_player.denon_marantz_avr`
+  - Power (`PW`)
+  - Volume + mute (`MV`, `MU`)
+  - Source select (`SI`)
+- `select.denon_marantz_avr_sound_mode`
+  - Sound mode selection (`MS`)
 
 ## Project structure
 

@@ -44,12 +44,14 @@ class DenonMarantzClient:
         volume = await self._async_send("MV?")
         source = await self._async_send("SI?")
         mute = await self._async_send("MU?")
+        sound_mode = await self._async_send("MS?")
 
         return {
             "power": power.replace("PW", ""),
             "volume": self._parse_volume(volume),
             "source": source.replace("SI", ""),
             "muted": mute.endswith("ON"),
+            "sound_mode": sound_mode.replace("MS", ""),
         }
 
     async def async_set_power(self, on: bool) -> None:
@@ -70,6 +72,10 @@ class DenonMarantzClient:
 
     async def async_set_source(self, source: str) -> None:
         await self._async_send(f"SI{source}")
+
+    async def async_set_sound_mode(self, sound_mode: str) -> None:
+        command_value = sound_mode.replace(" ", "")
+        await self._async_send(f"MS{command_value}")
 
     @staticmethod
     def _parse_volume(raw: str) -> float:
