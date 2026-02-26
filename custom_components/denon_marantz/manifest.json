@@ -36,11 +36,31 @@
     {
       "st": "upnp:rootdevice",
       "manufacturer": "Sound United"
+    },
+    {
+      "st": "urn:schemas-upnp-org:device:MediaRenderer:1",
+      "manufacturer": "Denon"
+    },
+    {
+      "st": "urn:schemas-upnp-org:device:MediaRenderer:1",
+      "manufacturer": "Marantz"
+    },
+    {
+      "st": "urn:schemas-upnp-org:device:MediaRenderer:1",
+      "manufacturer": "D&M Holdings Inc."
+    },
+    {
+      "deviceType": "urn:schemas-upnp-org:device:MediaRenderer:1",
+      "manufacturer": "Denon"
+    },
+    {
+      "deviceType": "urn:schemas-upnp-org:device:MediaRenderer:1",
+      "manufacturer": "Marantz"
     }
   ],
   "loggers": [
     "custom_components.denon_marantz"
   ],
   "requirements": [],
-  "version": "0.1.3"
+  "version": "0.1.4"
 }

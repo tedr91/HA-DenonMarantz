@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from urllib.parse import urlparse
 
 import voluptuous as vol
@@ -10,6 +11,8 @@ from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.data_entry_flow import FlowResult
 
 from .const import CONF_PORT, DEFAULT_NAME, DEFAULT_PORT, DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -36,13 +39,26 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(step_id="user", data_schema=schema)
 
     async def async_step_ssdp(self, discovery_info: ssdp.SsdpServiceInfo) -> FlowResult:
+        _LOGGER.debug(
+            "SSDP discovery candidate: st=%s usn=%s location=%s manufacturer=%s model=%s device_type=%s friendly_name=%s",
+            discovery_info.ssdp.get(ssdp.ATTR_SSDP_ST),
+            discovery_info.ssdp.get(ssdp.ATTR_SSDP_USN),
+            discovery_info.ssdp.get(ssdp.ATTR_SSDP_LOCATION),
+            discovery_info.upnp.get(ssdp.ATTR_UPNP_MANUFACTURER),
+            discovery_info.upnp.get(ssdp.ATTR_UPNP_MODEL_NAME),
+            discovery_info.upnp.get(ssdp.ATTR_UPNP_DEVICE_TYPE),
+            discovery_info.upnp.get(ssdp.ATTR_UPNP_FRIENDLY_NAME),
+        )
+
         location = discovery_info.upnp.get(ssdp.ATTR_SSDP_LOCATION)
         if not location:
+            _LOGGER.debug("SSDP discovery rejected: missing location")
             return self.async_abort(reason="cannot_connect")
 
         parsed = urlparse(location)
         host = parsed.hostname
         if not host:
+            _LOGGER.debug("SSDP discovery rejected: unable to parse host from location=%s", location)
             return self.async_abort(reason="cannot_connect")
 
         self._async_abort_entries_match({CONF_HOST: host})
@@ -56,11 +72,18 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             or f"{DEFAULT_NAME} ({host})"
         )
 
+        _LOGGER.debug(
+            "SSDP discovery accepted: host=%s name=%s",
+            self._discovered_host,
+            self._discovered_name,
+        )
+
         return await self.async_step_confirm()
 
     async def async_step_confirm(self, user_input: dict | None = None) -> FlowResult:
         if user_input is not None:
             if not self._discovered_host:
+                _LOGGER.debug("Discovery confirm failed: no discovered host in flow state")
                 return self.async_abort(reason="cannot_connect")
 
             entry_data = {
