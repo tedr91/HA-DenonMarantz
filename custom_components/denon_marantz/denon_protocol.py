@@ -33,17 +33,77 @@ class DenonMarantzClient:
         self._reader = None
         self._writer = None
 
-    async def _async_send(self, command: str, timeout: float = 2.0) -> str:
+    async def _async_send(
+        self,
+        command: str,
+        timeout: float = 2.0,
+        expected_prefixes: tuple[str, ...] | None = None,
+    ) -> str:
         async with self._lock:
             await self.connect()
 
             assert self._writer is not None
             assert self._reader is not None
 
+            expected = tuple(
+                prefix.upper() for prefix in (expected_prefixes or self._expected_prefixes(command))
+            )
+            loop = asyncio.get_running_loop()
+            deadline = loop.time() + timeout
+
             self._writer.write(f"{command}\r".encode("ascii"))
             await self._writer.drain()
-            response = await asyncio.wait_for(self._reader.readuntil(b"\r"), timeout=timeout)
-            return response.decode("ascii", errors="ignore").strip()
+            while True:
+                remaining = deadline - loop.time()
+                if remaining <= 0:
+                    raise TimeoutError(f"Timeout waiting for response to '{command}'")
+
+                response = await asyncio.wait_for(self._reader.readuntil(b"\r"), timeout=remaining)
+                decoded = response.decode("ascii", errors="ignore").strip()
+                upper = decoded.upper()
+
+                if upper.startswith("E"):
+                    return decoded
+
+                if any(upper.startswith(prefix) for prefix in expected):
+                    return decoded
+
+                self.logger.debug(
+                    "Discarding unsolicited AVR line while waiting for %s: %s",
+                    command,
+                    decoded,
+                )
+
+    @staticmethod
+    def _expected_prefixes(command: str) -> tuple[str, ...]:
+        cmd = command.strip().upper()
+        if cmd.endswith("?"):
+            cmd = cmd[:-1]
+
+        if cmd.startswith("Z2VOL"):
+            return ("Z2VOL",)
+        if cmd.startswith("Z3VOL"):
+            return ("Z3VOL",)
+        if cmd.startswith("Z2MU"):
+            return ("Z2MU", "Z2")
+        if cmd.startswith("Z3MU"):
+            return ("Z3MU", "Z3")
+        if cmd.startswith("Z2"):
+            return ("Z2",)
+        if cmd.startswith("Z3"):
+            return ("Z3",)
+        if cmd.startswith("PW"):
+            return ("PW",)
+        if cmd.startswith("MV"):
+            return ("MV",)
+        if cmd.startswith("MU"):
+            return ("MU",)
+        if cmd.startswith("SI"):
+            return ("SI",)
+        if cmd.startswith("MS"):
+            return ("MS",)
+
+        return (cmd[:2],)
 
     async def async_detect_zone_support(self) -> None:
         self.supports_zone2 = await self._async_is_zone_supported("Z2?", "Z2")
@@ -65,7 +125,11 @@ class DenonMarantzClient:
 
     async def _async_command_supported(self, command: str, valid_prefixes: tuple[str, ...]) -> bool:
         try:
-            response = await self._async_send(command, timeout=1.5)
+            response = await self._async_send(
+                command,
+                timeout=1.5,
+                expected_prefixes=tuple(prefix.upper() for prefix in valid_prefixes),
+            )
         except Exception:
             return False
 
@@ -76,7 +140,7 @@ class DenonMarantzClient:
 
     async def _async_is_zone_supported(self, command: str, prefix: str) -> bool:
         try:
-            response = await self._async_send(command, timeout=1.5)
+            response = await self._async_send(command, timeout=1.5, expected_prefixes=(prefix,))
         except Exception:
             return False
 
