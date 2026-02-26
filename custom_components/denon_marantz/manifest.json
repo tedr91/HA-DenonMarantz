@@ -8,9 +8,39 @@
   "documentation": "https://github.com/tedr91/HA-DenonMarantz",
   "integration_type": "device",
   "iot_class": "local_polling",
+  "ssdp": [
+    {
+      "st": "upnp:rootdevice",
+      "manufacturer": "Denon"
+    },
+    {
+      "st": "upnp:rootdevice",
+      "manufacturer": "DENON"
+    },
+    {
+      "st": "upnp:rootdevice",
+      "manufacturer": "Marantz"
+    },
+    {
+      "st": "upnp:rootdevice",
+      "manufacturer": "MARANTZ"
+    },
+    {
+      "st": "upnp:rootdevice",
+      "manufacturer": "D&M Holdings Inc."
+    },
+    {
+      "st": "upnp:rootdevice",
+      "manufacturer": "D+M Group"
+    },
+    {
+      "st": "upnp:rootdevice",
+      "manufacturer": "Sound United"
+    }
+  ],
   "loggers": [
     "custom_components.denon_marantz"
   ],
   "requirements": [],
-  "version": "0.1.1"
+  "version": "0.1.2"
 }

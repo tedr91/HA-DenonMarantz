@@ -9,7 +9,15 @@
           "host": "Host",
           "port": "Port"
         }
+      },
+      "confirm": {
+        "title": "Discovered Denon/Marantz AVR",
+        "description": "Set up {name} at {host}?"
       }
+    },
+    "abort": {
+      "cannot_connect": "Unable to discover connection details from SSDP.",
+      "already_configured": "Device is already configured."
     }
   },
   "entity": {

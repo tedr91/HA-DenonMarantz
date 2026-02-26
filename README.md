@@ -45,8 +45,9 @@ custom_components/
 
 1. Copy `custom_components/denon_marantz` into your Home Assistant `config/custom_components/` folder.
 2. Restart Home Assistant.
-3. Go to **Settings → Devices & Services → Add Integration**.
-4. Search for **Denon Marantz AVR** and enter host/port.
+3. Go to **Settings → Devices & Services**.
+4. If your AVR advertises SSDP, Home Assistant should offer it automatically for confirmation.
+5. You can still use **Add Integration** and search for **Denon Marantz AVR** to enter host/port manually.
 
 ## Notes
 
