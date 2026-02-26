@@ -2,15 +2,15 @@
   "domain": "denon_marantz",
   "name": "Denon Marantz AVR",
   "codeowners": [
-    "@your-github-handle"
+    "@tedr91"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/your-github-handle/HA-DenonMarantz",
+  "documentation": "https://github.com/tedr91/HA-DenonMarantz",
   "integration_type": "device",
   "iot_class": "local_polling",
   "loggers": [
     "custom_components.denon_marantz"
   ],
   "requirements": [],
-  "version": "0.1.0"
+  "version": "0.1.1"
 }
