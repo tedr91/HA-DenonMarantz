@@ -19,9 +19,22 @@ class DenonMarantzDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             update_interval=timedelta(seconds=5),
         )
         self.client = client
+        self._last_successful_data: dict[str, Any] | None = None
+        self._consecutive_failures = 0
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
-            return await self.client.async_get_status()
+            data = await self.client.async_get_status()
+            self._last_successful_data = data
+            self._consecutive_failures = 0
+            return data
         except Exception as err:
+            self._consecutive_failures += 1
+            if self._last_successful_data is not None:
+                self.logger.warning(
+                    "AVR update failed (%s). Returning cached state after %s consecutive failure(s).",
+                    err,
+                    self._consecutive_failures,
+                )
+                return self._last_successful_data
             raise UpdateFailed(f"Failed to fetch AVR state: {err}") from err

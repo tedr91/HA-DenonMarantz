@@ -52,3 +52,4 @@ custom_components/
 
 - Default AVR control port is typically `23` (telnet-like protocol).
 - This is an MVP scaffold intended as a base for protocol expansion.
+- Polling uses last-known-state fallback during transient connection failures.
