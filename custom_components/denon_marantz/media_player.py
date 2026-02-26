@@ -14,6 +14,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import DenonMarantzDataUpdateCoordinator
 from .denon_protocol import DenonMarantzClient
+from .entity import build_device_info
 
 
 async def async_setup_entry(
@@ -60,6 +61,7 @@ class DenonMarantzMediaPlayer(
         self._client = client
         self._attr_name = entry.data.get(CONF_NAME)
         self._attr_unique_id = entry.entry_id
+        self._attr_device_info = build_device_info(entry)
 
     @property
     def state(self) -> MediaPlayerState:
@@ -132,6 +134,7 @@ class DenonMarantzZoneMediaPlayer(
         base_name = entry.data.get(CONF_NAME)
         self._attr_name = f"{base_name} Zone {zone}"
         self._attr_unique_id = f"{entry.entry_id}_zone_{zone}"
+        self._attr_device_info = build_device_info(entry)
 
     @property
     def supported_features(self) -> MediaPlayerEntityFeature:

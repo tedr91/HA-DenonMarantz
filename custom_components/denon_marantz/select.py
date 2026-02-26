@@ -9,6 +9,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DEFAULT_SOUND_MODES, DOMAIN
 from .coordinator import DenonMarantzDataUpdateCoordinator
 from .denon_protocol import DenonMarantzClient
+from .entity import build_device_info
 
 
 async def async_setup_entry(
@@ -39,6 +40,7 @@ class DenonMarantzSoundModeSelect(
         self._attr_unique_id = f"{entry.entry_id}_sound_mode"
         self._attr_name = "Sound Mode"
         self._attr_options = DEFAULT_SOUND_MODES
+        self._attr_device_info = build_device_info(entry)
 
     @property
     def current_option(self) -> str | None:

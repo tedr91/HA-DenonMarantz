@@ -9,6 +9,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import DenonMarantzDataUpdateCoordinator
+from .entity import build_device_info
 
 
 async def async_setup_entry(
@@ -46,6 +47,7 @@ class DenonMarantzDiagnosticSensor(
         self._key = key
         self._attr_unique_id = f"{entry.entry_id}_{key}"
         self._attr_translation_key = key
+        self._attr_device_info = build_device_info(entry)
 
     @property
     def native_value(self) -> str | bool | None:
