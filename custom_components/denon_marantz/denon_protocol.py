@@ -50,6 +50,7 @@ class DenonMarantzClient:
         command: str,
         timeout: float = 2.0,
         expected_prefixes: tuple[str, ...] | None = None,
+        allow_timeout: bool = False,
     ) -> str:
         async with self._lock:
             expected = tuple(
@@ -60,7 +61,12 @@ class DenonMarantzClient:
             for attempt in (1, 2):
                 try:
                     await self.connect()
-                    return await self._async_send_once(command, timeout, expected)
+                    return await self._async_send_once(
+                        command,
+                        timeout,
+                        expected,
+                        allow_timeout=allow_timeout,
+                    )
                 except (ConnectionError, OSError, asyncio.IncompleteReadError) as err:
                     last_error = err
                     await self._async_reset_connection()
@@ -83,6 +89,7 @@ class DenonMarantzClient:
         command: str,
         timeout: float,
         expected: tuple[str, ...],
+        allow_timeout: bool,
     ) -> str:
         assert self._writer is not None
         assert self._reader is not None
@@ -95,6 +102,12 @@ class DenonMarantzClient:
         while True:
             remaining = deadline - loop.time()
             if remaining <= 0:
+                if allow_timeout:
+                    self.logger.debug(
+                        "No immediate AVR response for %s; continuing without acknowledgement",
+                        command,
+                    )
+                    return ""
                 raise TimeoutError(f"Timeout waiting for response to '{command}'")
 
             response = await asyncio.wait_for(self._reader.readuntil(b"\r"), timeout=remaining)
@@ -267,47 +280,50 @@ class DenonMarantzClient:
         }
 
     async def async_set_power(self, on: bool) -> None:
-        await self._async_send("PWON" if on else "PWSTANDBY")
+        await self._async_send("PWON" if on else "PWSTANDBY", allow_timeout=True)
 
     async def async_volume_up(self) -> None:
-        await self._async_send("MVUP")
+        await self._async_send("MVUP", allow_timeout=True)
 
     async def async_volume_down(self) -> None:
-        await self._async_send("MVDOWN")
+        await self._async_send("MVDOWN", allow_timeout=True)
 
     async def async_set_volume_level(self, level: float) -> None:
         avr_value = max(0, min(98, int(round(level * 98))))
-        await self._async_send(f"MV{avr_value:02d}")
+        await self._async_send(f"MV{avr_value:02d}", allow_timeout=True)
 
     async def async_set_mute(self, mute: bool) -> None:
-        await self._async_send("MUON" if mute else "MUOFF")
+        await self._async_send("MUON" if mute else "MUOFF", allow_timeout=True)
 
     async def async_set_source(self, source: str) -> None:
-        await self._async_send(f"SI{source}")
+        await self._async_send(f"SI{source}", allow_timeout=True)
 
     async def async_set_sound_mode(self, sound_mode: str) -> None:
         command_value = sound_mode.replace(" ", "")
-        await self._async_send(f"MS{command_value}")
+        await self._async_send(f"MS{command_value}", allow_timeout=True)
 
     async def async_set_zone_power(self, zone: str, on: bool) -> None:
         zone_prefix = "Z2" if zone == "2" else "Z3"
-        await self._async_send(f"{zone_prefix}{'ON' if on else 'OFF'}")
+        await self._async_send(f"{zone_prefix}{'ON' if on else 'OFF'}", allow_timeout=True)
 
     async def async_zone_volume_up(self, zone: str) -> None:
         zone_prefix = "Z2" if zone == "2" else "Z3"
-        await self._async_send(f"{zone_prefix}UP")
+        await self._async_send(f"{zone_prefix}UP", allow_timeout=True)
 
     async def async_zone_volume_down(self, zone: str) -> None:
         zone_prefix = "Z2" if zone == "2" else "Z3"
-        await self._async_send(f"{zone_prefix}DOWN")
+        await self._async_send(f"{zone_prefix}DOWN", allow_timeout=True)
 
     async def async_set_zone_mute(self, zone: str, mute: bool) -> None:
         zone_prefix = "Z2" if zone == "2" else "Z3"
-        await self._async_send(f"{zone_prefix}MU{'ON' if mute else 'OFF'}")
+        await self._async_send(
+            f"{zone_prefix}MU{'ON' if mute else 'OFF'}",
+            allow_timeout=True,
+        )
 
     async def async_set_zone_source(self, zone: str, source: str) -> None:
         zone_prefix = "Z2" if zone == "2" else "Z3"
-        await self._async_send(f"{zone_prefix}{source}")
+        await self._async_send(f"{zone_prefix}{source}", allow_timeout=True)
 
     @staticmethod
     def _parse_volume(raw: str) -> float:
