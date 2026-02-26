@@ -39,18 +39,29 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(step_id="user", data_schema=schema)
 
     async def async_step_ssdp(self, discovery_info: ssdp.SsdpServiceInfo) -> FlowResult:
+        st = self._get_ssdp_value(discovery_info, ssdp.ATTR_SSDP_ST, "ssdp_st")
+        usn = self._get_ssdp_value(discovery_info, ssdp.ATTR_SSDP_USN, "ssdp_usn")
+        location = self._get_ssdp_value(
+            discovery_info,
+            ssdp.ATTR_SSDP_LOCATION,
+            "ssdp_location",
+        )
+        manufacturer = self._get_upnp_value(discovery_info, ssdp.ATTR_UPNP_MANUFACTURER)
+        model = self._get_upnp_value(discovery_info, ssdp.ATTR_UPNP_MODEL_NAME)
+        device_type = self._get_upnp_value(discovery_info, ssdp.ATTR_UPNP_DEVICE_TYPE)
+        friendly_name = self._get_upnp_value(discovery_info, ssdp.ATTR_UPNP_FRIENDLY_NAME)
+
         _LOGGER.debug(
             "SSDP discovery candidate: st=%s usn=%s location=%s manufacturer=%s model=%s device_type=%s friendly_name=%s",
-            discovery_info.ssdp.get(ssdp.ATTR_SSDP_ST),
-            discovery_info.ssdp.get(ssdp.ATTR_SSDP_USN),
-            discovery_info.ssdp.get(ssdp.ATTR_SSDP_LOCATION),
-            discovery_info.upnp.get(ssdp.ATTR_UPNP_MANUFACTURER),
-            discovery_info.upnp.get(ssdp.ATTR_UPNP_MODEL_NAME),
-            discovery_info.upnp.get(ssdp.ATTR_UPNP_DEVICE_TYPE),
-            discovery_info.upnp.get(ssdp.ATTR_UPNP_FRIENDLY_NAME),
+            st,
+            usn,
+            location,
+            manufacturer,
+            model,
+            device_type,
+            friendly_name,
         )
 
-        location = discovery_info.upnp.get(ssdp.ATTR_SSDP_LOCATION)
         if not location:
             _LOGGER.debug("SSDP discovery rejected: missing location")
             return self.async_abort(reason="cannot_connect")
@@ -67,10 +78,7 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._abort_if_unique_id_configured()
 
         self._discovered_host = host
-        self._discovered_name = (
-            discovery_info.upnp.get(ssdp.ATTR_UPNP_FRIENDLY_NAME)
-            or f"{DEFAULT_NAME} ({host})"
-        )
+        self._discovered_name = friendly_name or f"{DEFAULT_NAME} ({host})"
 
         _LOGGER.debug(
             "SSDP discovery accepted: host=%s name=%s",
@@ -98,3 +106,39 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             "host": self._discovered_host or "",
         }
         return self.async_show_form(step_id="confirm")
+
+    @staticmethod
+    def _get_ssdp_value(
+        discovery_info: ssdp.SsdpServiceInfo,
+        key: str,
+        attr_name: str,
+    ) -> str | None:
+        ssdp_data = getattr(discovery_info, "ssdp", None)
+        if ssdp_data is not None and hasattr(ssdp_data, "get"):
+            value = ssdp_data.get(key)
+            if value:
+                return str(value)
+
+        ssdp_headers = getattr(discovery_info, "ssdp_headers", None)
+        if ssdp_headers is not None and hasattr(ssdp_headers, "get"):
+            value = ssdp_headers.get(key)
+            if value:
+                return str(value)
+
+        value = getattr(discovery_info, attr_name, None)
+        if value:
+            return str(value)
+
+        return None
+
+    @staticmethod
+    def _get_upnp_value(discovery_info: ssdp.SsdpServiceInfo, key: str) -> str | None:
+        upnp_data = getattr(discovery_info, "upnp", None)
+        if upnp_data is None or not hasattr(upnp_data, "get"):
+            return None
+
+        value = upnp_data.get(key)
+        if not value:
+            return None
+
+        return str(value)
