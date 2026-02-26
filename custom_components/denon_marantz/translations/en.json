@@ -1,5 +1,6 @@
 {
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
         "title": "Denon Marantz AVR",
@@ -24,20 +25,6 @@
     "select": {
       "sound_mode": {
         "name": "Sound mode"
-      }
-    },
-    "sensor": {
-      "zone2_supported": {
-        "name": "Zone 2 supported"
-      },
-      "zone3_supported": {
-        "name": "Zone 3 supported"
-      },
-      "zone2_capabilities": {
-        "name": "Zone 2 capabilities"
-      },
-      "zone3_capabilities": {
-        "name": "Zone 3 capabilities"
       }
     }
   }
