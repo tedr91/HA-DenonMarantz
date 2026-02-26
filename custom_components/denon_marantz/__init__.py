@@ -22,6 +22,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         host=entry.data["host"],
         port=entry.data["port"],
     )
+    await client.async_detect_zone_support()
     coordinator = DenonMarantzDataUpdateCoordinator(hass, client)
     await coordinator.async_config_entry_first_refresh()
 

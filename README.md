@@ -10,6 +10,9 @@ Home Assistant custom integration for Denon and Marantz AV receivers based on th
   - Source select (`SI`)
 - `select.denon_marantz_avr_sound_mode`
   - Sound mode selection (`MS`)
+- Optional zone entities (auto-discovered)
+  - `media_player.<name>_zone_2` when Zone2 is supported (`Z2`)
+  - `media_player.<name>_zone_3` when Zone3 is supported (`Z3`)
 
 ## Project structure
 

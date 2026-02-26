@@ -24,7 +24,15 @@ async def async_setup_entry(
     data = hass.data[DOMAIN][entry.entry_id]
     coordinator: DenonMarantzDataUpdateCoordinator = data["coordinator"]
     client: DenonMarantzClient = data["client"]
-    async_add_entities([DenonMarantzMediaPlayer(entry, coordinator, client)])
+    entities: list[MediaPlayerEntity] = [DenonMarantzMediaPlayer(entry, coordinator, client)]
+
+    if coordinator.data and coordinator.data.get("zone2_supported"):
+        entities.append(DenonMarantzZoneMediaPlayer(entry, coordinator, client, zone="2"))
+
+    if coordinator.data and coordinator.data.get("zone3_supported"):
+        entities.append(DenonMarantzZoneMediaPlayer(entry, coordinator, client, zone="3"))
+
+    async_add_entities(entities)
 
 
 class DenonMarantzMediaPlayer(
@@ -102,4 +110,44 @@ class DenonMarantzMediaPlayer(
 
     async def async_select_source(self, source: str) -> None:
         await self._client.async_set_source(source)
+        await self.coordinator.async_request_refresh()
+
+
+class DenonMarantzZoneMediaPlayer(
+    CoordinatorEntity[DenonMarantzDataUpdateCoordinator],
+    MediaPlayerEntity,
+):
+    _attr_supported_features = (
+        MediaPlayerEntityFeature.TURN_ON | MediaPlayerEntityFeature.TURN_OFF
+    )
+
+    def __init__(
+        self,
+        entry: ConfigEntry,
+        coordinator: DenonMarantzDataUpdateCoordinator,
+        client: DenonMarantzClient,
+        zone: str,
+    ) -> None:
+        super().__init__(coordinator)
+        self._client = client
+        self._zone = zone
+        base_name = entry.data.get(CONF_NAME)
+        self._attr_name = f"{base_name} Zone {zone}"
+        self._attr_unique_id = f"{entry.entry_id}_zone_{zone}"
+
+    @property
+    def state(self) -> MediaPlayerState:
+        if not self.coordinator.data:
+            return MediaPlayerState.OFF
+
+        zone_key = "zone2_power" if self._zone == "2" else "zone3_power"
+        zone_power = self.coordinator.data.get(zone_key)
+        return MediaPlayerState.ON if zone_power == "ON" else MediaPlayerState.OFF
+
+    async def async_turn_on(self) -> None:
+        await self._client.async_set_zone_power(self._zone, True)
+        await self.coordinator.async_request_refresh()
+
+    async def async_turn_off(self) -> None:
+        await self._client.async_set_zone_power(self._zone, False)
         await self.coordinator.async_request_refresh()
