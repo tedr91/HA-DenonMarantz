@@ -26,7 +26,8 @@
       "init": {
         "title": "Options",
         "data": {
-          "add_extended_entities": "Add Extended Entities"
+          "add_extended_entities": "Add Extended Entities",
+          "input_filter": "Input Filter"
         }
       }
     }

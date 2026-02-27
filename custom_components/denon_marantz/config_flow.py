@@ -13,8 +13,10 @@ from homeassistant.data_entry_flow import FlowResult
 
 from .const import (
     CONF_ADD_EXTENDED_ENTITIES,
+    CONF_INPUT_FILTER,
     CONF_PORT,
     DEFAULT_ADD_EXTENDED_ENTITIES,
+    DEFAULT_INPUT_FILTER,
     DEFAULT_NAME,
     DEFAULT_PORT,
     DOMAIN,
@@ -219,6 +221,13 @@ class DenonMarantzOptionsFlow(config_entries.OptionsFlow):
                         DEFAULT_ADD_EXTENDED_ENTITIES,
                     ),
                 ): bool,
+                vol.Optional(
+                    CONF_INPUT_FILTER,
+                    default=self.config_entry.options.get(
+                        CONF_INPUT_FILTER,
+                        DEFAULT_INPUT_FILTER,
+                    ),
+                ): str,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

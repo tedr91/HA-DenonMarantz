@@ -24,10 +24,17 @@ from .const import (
 
 
 class DenonMarantzClient:
-    def __init__(self, host: str, port: int, include_extended_entities: bool = False) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        include_extended_entities: bool = False,
+        input_filter: str = "",
+    ) -> None:
         self.host = host
         self.port = port
         self._include_extended_entities = include_extended_entities
+        self._input_filter_tokens = self._parse_input_filter(input_filter)
         self.logger = logging.getLogger(__name__)
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
@@ -399,8 +406,6 @@ class DenonMarantzClient:
     def _source_options(self, current_source: str | None) -> list[str]:
         options = list(DEFAULT_INPUT_SOURCES)
         options.extend(self._source_code_to_label.values())
-        if current_source:
-            options.append(current_source)
 
         deduped: list[str] = []
         seen: set[str] = set()
@@ -411,7 +416,31 @@ class DenonMarantzClient:
             seen.add(normalized)
             deduped.append(option)
 
-        return deduped
+        filtered = self._filter_source_options(deduped)
+        if current_source:
+            current_normalized = current_source.casefold()
+            if all(option.casefold() != current_normalized for option in filtered):
+                filtered.append(current_source)
+
+        return filtered
+
+    def _filter_source_options(self, options: list[str]) -> list[str]:
+        if not self._input_filter_tokens:
+            return options
+
+        return [
+            option
+            for option in options
+            if any(token in option.casefold() for token in self._input_filter_tokens)
+        ]
+
+    @staticmethod
+    def _parse_input_filter(raw_filter: str) -> tuple[str, ...]:
+        return tuple(
+            token.strip().casefold()
+            for token in raw_filter.split(",")
+            if token.strip()
+        )
 
     async def _async_query_optional(
         self,

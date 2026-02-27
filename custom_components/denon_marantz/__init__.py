@@ -10,7 +10,9 @@ from homeassistant.helpers import config_validation as cv
 
 from .const import (
     CONF_ADD_EXTENDED_ENTITIES,
+    CONF_INPUT_FILTER,
     DEFAULT_ADD_EXTENDED_ENTITIES,
+    DEFAULT_INPUT_FILTER,
     ATTR_COMMAND,
     ATTR_ENTRY_ID,
     ATTR_EXPECTED_PREFIXES,
@@ -121,6 +123,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         include_extended_entities=bool(
             entry.options.get(CONF_ADD_EXTENDED_ENTITIES, DEFAULT_ADD_EXTENDED_ENTITIES)
         ),
+        input_filter=str(entry.options.get(CONF_INPUT_FILTER, DEFAULT_INPUT_FILTER)),
     )
     coordinator = DenonMarantzDataUpdateCoordinator(hass, client)
     await coordinator.async_config_entry_first_refresh()
