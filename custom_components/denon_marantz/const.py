@@ -4,6 +4,12 @@ DEFAULT_PORT = 23
 
 CONF_PORT = "port"
 
+SERVICE_SEND_COMMAND = "send_command"
+ATTR_COMMAND = "command"
+ATTR_ENTRY_ID = "entry_id"
+ATTR_TIMEOUT = "timeout"
+ATTR_EXPECTED_PREFIXES = "expected_prefixes"
+
 DEFAULT_SOUND_MODES: list[str] = [
 	"STEREO",
 	"DIRECT",

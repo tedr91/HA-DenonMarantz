@@ -1,0 +1,33 @@
+send_command:
+  name: Send Command
+  description: Send a raw command to the configured AVR and return its response.
+  fields:
+    command:
+      name: Command
+      description: Raw AVR command to send (for example, PW? or MS?).
+      required: true
+      selector:
+        text:
+    entry_id:
+      name: Entry ID
+      description: Optional config entry ID when multiple AVR entries are configured.
+      required: false
+      selector:
+        text:
+    timeout:
+      name: Timeout
+      description: Seconds to wait for a response.
+      required: false
+      default: 2
+      selector:
+        number:
+          min: 0.1
+          max: 30
+          step: 0.1
+          mode: box
+    expected_prefixes:
+      name: Expected Prefixes
+      description: Optional list of response prefixes to wait for.
+      required: false
+      selector:
+        object:

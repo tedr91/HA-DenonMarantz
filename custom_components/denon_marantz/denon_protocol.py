@@ -96,6 +96,22 @@ class DenonMarantzClient:
 
             raise RuntimeError("Unexpected protocol send state")
 
+    async def async_send_command(
+        self,
+        command: str,
+        timeout: float = 2.0,
+        expected_prefixes: tuple[str, ...] | None = None,
+    ) -> str:
+        normalized_prefixes: tuple[str, ...] | None = None
+        if expected_prefixes:
+            normalized_prefixes = tuple(prefix.strip() for prefix in expected_prefixes if prefix.strip())
+
+        return await self._async_send(
+            command=command,
+            timeout=timeout,
+            expected_prefixes=normalized_prefixes,
+        )
+
     async def _async_send_once(
         self,
         command: str,
