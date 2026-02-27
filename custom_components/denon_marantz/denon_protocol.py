@@ -140,19 +140,37 @@ class DenonMarantzClient:
         return (cmd[:2],)
 
     async def async_get_status(self) -> dict[str, Any]:
-        power = await self._async_send("PW?")
-        volume = await self._async_send("MV?")
-        source = await self._async_send("SI?")
-        mute = await self._async_send("MU?")
-        sound_mode = await self._async_send("MS?")
+        power_raw = await self._async_send("PW?")
+        power = self._parse_power(power_raw)
+
+        if power != "ON":
+            return {
+                "power": power,
+                "volume": 0.0,
+                "source": None,
+                "muted": False,
+                "sound_mode": None,
+            }
+
+        volume_raw = await self._async_query_optional("MV?")
+        source_raw = await self._async_query_optional("SI?")
+        mute_raw = await self._async_query_optional("MU?")
+        sound_mode_raw = await self._async_query_optional("MS?")
 
         return {
-            "power": power.replace("PW", ""),
-            "volume": self._parse_volume(volume),
-            "source": source.replace("SI", ""),
-            "muted": mute.endswith("ON"),
-            "sound_mode": sound_mode.replace("MS", ""),
+            "power": power,
+            "volume": self._parse_volume(volume_raw or ""),
+            "source": self._strip_prefix(source_raw, "SI"),
+            "muted": bool(mute_raw and mute_raw.upper().endswith("ON")),
+            "sound_mode": self._strip_prefix(sound_mode_raw, "MS"),
         }
+
+    async def _async_query_optional(self, command: str) -> str | None:
+        try:
+            return await self._async_send(command)
+        except Exception as err:
+            self.logger.debug("Optional AVR status query failed for %s: %s", command, err)
+            return None
 
     async def async_set_power(self, on: bool) -> None:
         await self._async_send("PWON" if on else "PWSTANDBY", allow_timeout=True)
@@ -184,3 +202,19 @@ class DenonMarantzClient:
             return max(0.0, min(1.0, int(value[:2]) / 98.0))
         except (TypeError, ValueError, IndexError):
             return 0.0
+
+    @staticmethod
+    def _parse_power(raw: str) -> str:
+        value = raw.upper().replace("PW", "", 1).strip()
+        if value.startswith("ON"):
+            return "ON"
+        return "OFF"
+
+    @staticmethod
+    def _strip_prefix(raw: str | None, prefix: str) -> str | None:
+        if not raw:
+            return None
+        upper_prefix = prefix.upper()
+        if raw.upper().startswith(upper_prefix):
+            return raw[len(prefix) :].strip() or None
+        return raw.strip() or None
