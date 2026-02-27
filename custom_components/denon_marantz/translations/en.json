@@ -22,11 +22,6 @@
     }
   },
   "entity": {
-    "switch": {
-      "mute": {
-        "name": "Mute"
-      }
-    },
     "select": {
       "input_source": {
         "name": "Input source"

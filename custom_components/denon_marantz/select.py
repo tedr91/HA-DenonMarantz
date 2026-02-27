@@ -84,8 +84,18 @@ class DenonMarantzInputSourceSelect(
         self._client = client
         self._attr_unique_id = f"{entry.entry_id}_input_source"
         self._attr_name = "Input Source"
-        self._attr_options = DEFAULT_INPUT_SOURCES
         self._attr_device_info = build_device_info(entry)
+
+    @property
+    def options(self) -> list[str]:
+        if not self.coordinator.data:
+            return DEFAULT_INPUT_SOURCES
+
+        source_options = self.coordinator.data.get("source_options")
+        if isinstance(source_options, list) and source_options:
+            return source_options
+
+        return DEFAULT_INPUT_SOURCES
 
     @property
     def current_option(self) -> str | None:

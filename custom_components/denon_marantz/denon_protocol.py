@@ -4,6 +4,8 @@ import asyncio
 import logging
 from typing import Any
 
+from .const import DEFAULT_INPUT_SOURCES
+
 
 class DenonMarantzClient:
     def __init__(self, host: str, port: int) -> None:
@@ -13,6 +15,9 @@ class DenonMarantzClient:
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
         self._lock = asyncio.Lock()
+        self._source_code_to_label: dict[str, str] = {}
+        self._source_label_to_code: dict[str, str] = {}
+        self._source_map_fetched = False
 
     async def connect(self) -> None:
         if self._writer is not None:
@@ -140,6 +145,8 @@ class DenonMarantzClient:
         return (cmd[:2],)
 
     async def async_get_status(self) -> dict[str, Any]:
+        await self._async_ensure_source_map()
+
         power_raw = await self._async_send("PW?")
         power = self._parse_power(power_raw)
 
@@ -157,13 +164,121 @@ class DenonMarantzClient:
         mute_raw = await self._async_query_optional("MU?")
         sound_mode_raw = await self._async_query_optional("MS?")
 
+        source_code = self._strip_prefix(source_raw, "SI")
+        source_label = self._source_label_from_code(source_code)
+
         return {
             "power": power,
             "volume": self._parse_volume(volume_raw or ""),
-            "source": self._strip_prefix(source_raw, "SI"),
+            "source": source_label,
+            "source_options": self._source_options(source_label),
             "muted": bool(mute_raw and mute_raw.upper().endswith("ON")),
             "sound_mode": self._strip_prefix(sound_mode_raw, "MS"),
         }
+
+    async def _async_ensure_source_map(self) -> None:
+        if self._source_map_fetched:
+            return
+
+        self._source_map_fetched = True
+        discovered = await self._async_fetch_source_map()
+        if discovered:
+            self._source_code_to_label = discovered
+            self._source_label_to_code = {
+                label.casefold(): code for code, label in discovered.items() if label
+            }
+            self.logger.debug("Loaded %s AVR input source labels", len(discovered))
+        else:
+            self.logger.debug("Falling back to default input source labels")
+
+    async def _async_fetch_source_map(self) -> dict[str, str]:
+        async with self._lock:
+            await self.connect()
+
+            assert self._writer is not None
+            assert self._reader is not None
+
+            self._writer.write("SSFUN ?\r".encode("ascii"))
+            await self._writer.drain()
+
+            loop = asyncio.get_running_loop()
+            deadline = loop.time() + 2.5
+            discovered: dict[str, str] = {}
+
+            while True:
+                remaining = deadline - loop.time()
+                if remaining <= 0:
+                    break
+
+                try:
+                    response = await asyncio.wait_for(self._reader.readuntil(b"\r"), timeout=remaining)
+                except TimeoutError:
+                    break
+
+                decoded = response.decode("ascii", errors="ignore").strip()
+                upper = decoded.upper()
+
+                if upper.startswith("E"):
+                    return {}
+
+                if not upper.startswith("SSFUN"):
+                    continue
+
+                payload = decoded[5:].strip()
+                if not payload:
+                    continue
+
+                if payload.upper() == "END":
+                    break
+
+                code, label = self._parse_ssfun_payload(payload)
+                if code and label:
+                    discovered[code] = label
+
+            return discovered
+
+    @staticmethod
+    def _parse_ssfun_payload(payload: str) -> tuple[str | None, str | None]:
+        parts = payload.split()
+        if not parts:
+            return None, None
+
+        code = parts[0].strip().upper()
+        if len(parts) == 1:
+            return code, parts[0].strip()
+
+        label = " ".join(parts[1:]).strip()
+        if not label:
+            label = parts[0].strip()
+
+        return code, label
+
+    def _source_label_from_code(self, code: str | None) -> str | None:
+        if not code:
+            return None
+
+        normalized = code.strip().upper()
+        if normalized in self._source_code_to_label:
+            return self._source_code_to_label[normalized]
+
+        return code.strip()
+
+    def _source_options(self, current_source: str | None) -> list[str]:
+        options = list(DEFAULT_INPUT_SOURCES)
+        options.extend(self._source_code_to_label.values())
+        if current_source:
+            options.append(current_source)
+
+        deduped: list[str] = []
+        seen: set[str] = set()
+        for option in options:
+            normalized = option.casefold()
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            deduped.append(option)
+
+        return deduped
 
     async def _async_query_optional(self, command: str) -> str | None:
         try:
@@ -189,7 +304,8 @@ class DenonMarantzClient:
         await self._async_send("MUON" if mute else "MUOFF", allow_timeout=True)
 
     async def async_set_source(self, source: str) -> None:
-        await self._async_send(f"SI{source}", allow_timeout=True)
+        source_code = self._source_label_to_code.get(source.strip().casefold(), source)
+        await self._async_send(f"SI{source_code}", allow_timeout=True)
 
     async def async_set_sound_mode(self, sound_mode: str) -> None:
         command_value = sound_mode.replace(" ", "")

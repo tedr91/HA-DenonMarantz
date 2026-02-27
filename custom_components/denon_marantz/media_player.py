@@ -41,8 +41,6 @@ class DenonMarantzMediaPlayer(
         | MediaPlayerEntityFeature.VOLUME_MUTE
     )
 
-    _attr_source_list = DEFAULT_INPUT_SOURCES
-
     def __init__(
         self,
         entry: ConfigEntry,
@@ -77,6 +75,17 @@ class DenonMarantzMediaPlayer(
         if not self.coordinator.data:
             return None
         return self.coordinator.data.get("source")
+
+    @property
+    def source_list(self) -> list[str] | None:
+        if not self.coordinator.data:
+            return DEFAULT_INPUT_SOURCES
+
+        source_options = self.coordinator.data.get("source_options")
+        if isinstance(source_options, list) and source_options:
+            return source_options
+
+        return DEFAULT_INPUT_SOURCES
 
     async def async_turn_on(self) -> None:
         await self._client.async_set_power(True)
