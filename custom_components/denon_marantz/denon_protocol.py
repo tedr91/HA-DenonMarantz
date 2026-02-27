@@ -109,7 +109,17 @@ class DenonMarantzClient:
                     return ""
                 raise TimeoutError(f"Timeout waiting for response to '{command}'")
 
-            response = await asyncio.wait_for(self._reader.readuntil(b"\r"), timeout=remaining)
+            try:
+                response = await asyncio.wait_for(self._reader.readuntil(b"\r"), timeout=remaining)
+            except TimeoutError:
+                if allow_timeout:
+                    self.logger.debug(
+                        "No immediate AVR response for %s; continuing without acknowledgement",
+                        command,
+                    )
+                    return ""
+                raise TimeoutError(f"Timeout waiting for response to '{command}'")
+
             decoded = response.decode("ascii", errors="ignore").strip()
             upper = decoded.upper()
 
