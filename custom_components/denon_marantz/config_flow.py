@@ -11,7 +11,14 @@ from homeassistant.components import ssdp
 from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.data_entry_flow import FlowResult
 
-from .const import CONF_PORT, DEFAULT_NAME, DEFAULT_PORT, DOMAIN
+from .const import (
+    CONF_ADD_EXTENDED_ENTITIES,
+    CONF_PORT,
+    DEFAULT_ADD_EXTENDED_ENTITIES,
+    DEFAULT_NAME,
+    DEFAULT_PORT,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -189,3 +196,29 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return str(value)
 
         return None
+
+    @staticmethod
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> DenonMarantzOptionsFlow:
+        return DenonMarantzOptionsFlow(config_entry)
+
+
+class DenonMarantzOptionsFlow(config_entries.OptionsFlow):
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        self.config_entry = config_entry
+
+    async def async_step_init(self, user_input: dict | None = None) -> FlowResult:
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_ADD_EXTENDED_ENTITIES,
+                    default=self.config_entry.options.get(
+                        CONF_ADD_EXTENDED_ENTITIES,
+                        DEFAULT_ADD_EXTENDED_ENTITIES,
+                    ),
+                ): bool,
+            }
+        )
+        return self.async_show_form(step_id="init", data_schema=schema)

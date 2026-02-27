@@ -9,6 +9,8 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 
 from .const import (
+    CONF_ADD_EXTENDED_ENTITIES,
+    DEFAULT_ADD_EXTENDED_ENTITIES,
     ATTR_COMMAND,
     ATTR_ENTRY_ID,
     ATTR_EXPECTED_PREFIXES,
@@ -116,6 +118,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     client = DenonMarantzClient(
         host=entry.data["host"],
         port=entry.data["port"],
+        include_extended_entities=bool(
+            entry.options.get(CONF_ADD_EXTENDED_ENTITIES, DEFAULT_ADD_EXTENDED_ENTITIES)
+        ),
     )
     coordinator = DenonMarantzDataUpdateCoordinator(hass, client)
     await coordinator.async_config_entry_first_refresh()

@@ -3,6 +3,8 @@ DEFAULT_NAME = "Denon Marantz AVR"
 DEFAULT_PORT = 23
 
 CONF_PORT = "port"
+CONF_ADD_EXTENDED_ENTITIES = "add_extended_entities"
+DEFAULT_ADD_EXTENDED_ENTITIES = False
 
 SERVICE_SEND_COMMAND = "send_command"
 ATTR_COMMAND = "command"

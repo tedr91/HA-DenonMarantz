@@ -24,9 +24,10 @@ from .const import (
 
 
 class DenonMarantzClient:
-    def __init__(self, host: str, port: int) -> None:
+    def __init__(self, host: str, port: int, include_extended_entities: bool = False) -> None:
         self.host = host
         self.port = port
+        self._include_extended_entities = include_extended_entities
         self.logger = logging.getLogger(__name__)
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
@@ -211,27 +212,38 @@ class DenonMarantzClient:
         source_raw = await self._async_query_optional("SI?")
         mute_raw = await self._async_query_optional("MU?")
         sound_mode_raw = await self._async_query_optional("MS?")
-        dynamic_eq_raw = await self._async_query_optional(
-            DYNAMIC_EQ_QUERY_COMMAND,
-            expected_prefixes=(DYNAMIC_EQ_RESPONSE_PREFIX,),
+
+        dynamic_eq_raw: str | None = None
+        dynamic_volume_raw: str | None = None
+        dialogue_enhancer_raw: str | None = None
+        dynamic_compression_raw: str | None = None
+        loudness_raw: str | None = None
+        if self._include_extended_entities:
+            dynamic_eq_raw = await self._async_query_optional(
+                DYNAMIC_EQ_QUERY_COMMAND,
+                expected_prefixes=(DYNAMIC_EQ_RESPONSE_PREFIX,),
+            )
+            dynamic_volume_raw = await self._async_query_optional(
+                DYNAMIC_VOLUME_QUERY_COMMAND,
+                expected_prefixes=(DYNAMIC_VOLUME_RESPONSE_PREFIX,),
+            )
+            dialogue_enhancer_raw = await self._async_query_optional(
+                DIALOGUE_ENHANCER_QUERY_COMMAND,
+                expected_prefixes=(DIALOGUE_ENHANCER_RESPONSE_PREFIX,),
+            )
+            dynamic_compression_raw = await self._async_query_optional(
+                DYNAMIC_COMPRESSION_QUERY_COMMAND,
+                expected_prefixes=(DYNAMIC_COMPRESSION_RESPONSE_PREFIX,),
+            )
+            loudness_raw = await self._async_query_optional(
+                LOUDNESS_QUERY_COMMAND,
+                expected_prefixes=(LOUDNESS_RESPONSE_PREFIX,),
+            )
+        status_sensors = (
+            await self._async_get_status_sensors()
+            if self._include_extended_entities
+            else self._empty_status_sensors()
         )
-        dynamic_volume_raw = await self._async_query_optional(
-            DYNAMIC_VOLUME_QUERY_COMMAND,
-            expected_prefixes=(DYNAMIC_VOLUME_RESPONSE_PREFIX,),
-        )
-        dialogue_enhancer_raw = await self._async_query_optional(
-            DIALOGUE_ENHANCER_QUERY_COMMAND,
-            expected_prefixes=(DIALOGUE_ENHANCER_RESPONSE_PREFIX,),
-        )
-        dynamic_compression_raw = await self._async_query_optional(
-            DYNAMIC_COMPRESSION_QUERY_COMMAND,
-            expected_prefixes=(DYNAMIC_COMPRESSION_RESPONSE_PREFIX,),
-        )
-        loudness_raw = await self._async_query_optional(
-            LOUDNESS_QUERY_COMMAND,
-            expected_prefixes=(LOUDNESS_RESPONSE_PREFIX,),
-        )
-        status_sensors = await self._async_get_status_sensors()
 
         source_code = self._strip_prefix(source_raw, "SI")
         source_label = self._source_label_from_code(source_code)
@@ -243,23 +255,41 @@ class DenonMarantzClient:
             "source_options": self._source_options(source_label),
             "muted": bool(mute_raw and mute_raw.upper().endswith("ON")),
             "sound_mode": self._strip_prefix(sound_mode_raw, "MS"),
-            "dynamic_eq": self._parse_on_off_status(
-                self._strip_prefix(dynamic_eq_raw, DYNAMIC_EQ_RESPONSE_PREFIX)
+            "dynamic_eq": (
+                self._parse_on_off_status(self._strip_prefix(dynamic_eq_raw, DYNAMIC_EQ_RESPONSE_PREFIX))
+                if self._include_extended_entities
+                else None
             ),
-            "dynamic_volume": self._parse_dynamic_volume_status(
-                self._strip_prefix(dynamic_volume_raw, DYNAMIC_VOLUME_RESPONSE_PREFIX)
+            "dynamic_volume": (
+                self._parse_dynamic_volume_status(
+                    self._strip_prefix(dynamic_volume_raw, DYNAMIC_VOLUME_RESPONSE_PREFIX)
+                )
+                if self._include_extended_entities
+                else None
             ),
-            "dialogue_enhancer": self._parse_option_status(
-                self._strip_prefix(dialogue_enhancer_raw, DIALOGUE_ENHANCER_RESPONSE_PREFIX),
-                DIALOGUE_ENHANCER_OPTIONS,
+            "dialogue_enhancer": (
+                self._parse_option_status(
+                    self._strip_prefix(dialogue_enhancer_raw, DIALOGUE_ENHANCER_RESPONSE_PREFIX),
+                    DIALOGUE_ENHANCER_OPTIONS,
+                )
+                if self._include_extended_entities
+                else None
             ),
-            "dynamic_compression": self._parse_option_status(
-                self._strip_prefix(dynamic_compression_raw, DYNAMIC_COMPRESSION_RESPONSE_PREFIX),
-                DYNAMIC_COMPRESSION_OPTIONS,
+            "dynamic_compression": (
+                self._parse_option_status(
+                    self._strip_prefix(dynamic_compression_raw, DYNAMIC_COMPRESSION_RESPONSE_PREFIX),
+                    DYNAMIC_COMPRESSION_OPTIONS,
+                )
+                if self._include_extended_entities
+                else None
             ),
-            "loudness": self._parse_option_status(
-                self._strip_prefix(loudness_raw, LOUDNESS_RESPONSE_PREFIX),
-                LOUDNESS_OPTIONS,
+            "loudness": (
+                self._parse_option_status(
+                    self._strip_prefix(loudness_raw, LOUDNESS_RESPONSE_PREFIX),
+                    LOUDNESS_OPTIONS,
+                )
+                if self._include_extended_entities
+                else None
             ),
             "status_sensors": status_sensors,
         }

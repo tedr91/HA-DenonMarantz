@@ -6,7 +6,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, STATUS_SENSOR_COMMANDS
+from .const import (
+    CONF_ADD_EXTENDED_ENTITIES,
+    DEFAULT_ADD_EXTENDED_ENTITIES,
+    DOMAIN,
+    STATUS_SENSOR_COMMANDS,
+)
 from .coordinator import DenonMarantzDataUpdateCoordinator
 from .entity import build_device_info
 
@@ -19,12 +24,43 @@ async def async_setup_entry(
     data = hass.data[DOMAIN][entry.entry_id]
     coordinator: DenonMarantzDataUpdateCoordinator = data["coordinator"]
 
-    async_add_entities(
-        [
-            DenonMarantzStatusSensor(entry, coordinator, sensor_key)
-            for sensor_key, _, _ in STATUS_SENSOR_COMMANDS
-        ]
-    )
+    entities: list[SensorEntity] = [
+        DenonMarantzSoundModeSensor(entry, coordinator),
+    ]
+
+    if entry.options.get(CONF_ADD_EXTENDED_ENTITIES, DEFAULT_ADD_EXTENDED_ENTITIES):
+        entities.extend(
+            [
+                DenonMarantzStatusSensor(entry, coordinator, sensor_key)
+                for sensor_key, _, _ in STATUS_SENSOR_COMMANDS
+            ]
+        )
+
+    async_add_entities(entities)
+
+
+class DenonMarantzSoundModeSensor(
+    CoordinatorEntity[DenonMarantzDataUpdateCoordinator],
+    SensorEntity,
+):
+    _attr_has_entity_name = True
+    _attr_translation_key = "sound_mode"
+
+    def __init__(
+        self,
+        entry: ConfigEntry,
+        coordinator: DenonMarantzDataUpdateCoordinator,
+    ) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_sound_mode"
+        self._attr_device_info = build_device_info(entry)
+
+    @property
+    def native_value(self) -> str | None:
+        if not self.coordinator.data:
+            return None
+        value = self.coordinator.data.get("sound_mode")
+        return value if isinstance(value, str) else None
 
 
 class DenonMarantzStatusSensor(

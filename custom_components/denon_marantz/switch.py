@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import CONF_ADD_EXTENDED_ENTITIES, DEFAULT_ADD_EXTENDED_ENTITIES, DOMAIN
 from .coordinator import DenonMarantzDataUpdateCoordinator
 from .denon_protocol import DenonMarantzClient
 from .entity import build_device_info
@@ -17,6 +17,9 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
+    if not entry.options.get(CONF_ADD_EXTENDED_ENTITIES, DEFAULT_ADD_EXTENDED_ENTITIES):
+        return
+
     data = hass.data[DOMAIN][entry.entry_id]
     coordinator: DenonMarantzDataUpdateCoordinator = data["coordinator"]
     client: DenonMarantzClient = data["client"]

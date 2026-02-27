@@ -21,6 +21,16 @@
       "already_configured": "Device is already configured."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "add_extended_entities": "Add Extended Entities"
+        }
+      }
+    }
+  },
   "entity": {
     "button": {
       "control_up": {
@@ -55,9 +65,6 @@
       "input_source": {
         "name": "Input source"
       },
-      "sound_mode": {
-        "name": "Sound mode"
-      },
       "dynamic_volume": {
         "name": "Dynamic Volume"
       },
@@ -72,6 +79,9 @@
       }
     },
     "sensor": {
+      "sound_mode": {
+        "name": "Sound mode"
+      },
       "cinema_eq_status": {
         "name": "Cinema EQ status"
       },
