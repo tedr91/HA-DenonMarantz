@@ -66,6 +66,9 @@
       },
       "dynamic_compression": {
         "name": "Dynamic Compression"
+      },
+      "loudness": {
+        "name": "Loudness"
       }
     },
     "sensor": {

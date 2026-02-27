@@ -12,6 +12,7 @@ from .const import (
     DIALOGUE_ENHANCER_OPTIONS,
     DYNAMIC_COMPRESSION_OPTIONS,
     DYNAMIC_VOLUME_OPTIONS,
+    LOUDNESS_OPTIONS,
     DOMAIN,
 )
 from .coordinator import DenonMarantzDataUpdateCoordinator
@@ -34,6 +35,7 @@ async def async_setup_entry(
             DenonMarantzDynamicVolumeSelect(entry, coordinator, client),
             DenonMarantzDialogueEnhancerSelect(entry, coordinator, client),
             DenonMarantzDynamicCompressionSelect(entry, coordinator, client),
+            DenonMarantzLoudnessSelect(entry, coordinator, client),
         ]
     )
 
@@ -245,4 +247,44 @@ class DenonMarantzDynamicCompressionSelect(
 
     async def async_select_option(self, option: str) -> None:
         await self._client.async_set_dynamic_compression(option)
+        await self.coordinator.async_request_refresh()
+
+
+class DenonMarantzLoudnessSelect(
+    CoordinatorEntity[DenonMarantzDataUpdateCoordinator],
+    SelectEntity,
+):
+    _attr_translation_key = "loudness"
+
+    def __init__(
+        self,
+        entry: ConfigEntry,
+        coordinator: DenonMarantzDataUpdateCoordinator,
+        client: DenonMarantzClient,
+    ) -> None:
+        super().__init__(coordinator)
+        self._client = client
+        self._attr_unique_id = f"{entry.entry_id}_loudness"
+        self._attr_name = "Loudness"
+        self._attr_options = LOUDNESS_OPTIONS
+        self._attr_device_info = build_device_info(entry)
+
+    @property
+    def current_option(self) -> str | None:
+        if not self.coordinator.data:
+            return None
+
+        current = self.coordinator.data.get("loudness")
+        if not current:
+            return None
+
+        normalized = str(current).strip().casefold()
+        for option in self.options:
+            if option.casefold() == normalized:
+                return option
+
+        return None
+
+    async def async_select_option(self, option: str) -> None:
+        await self._client.async_set_loudness(option)
         await self.coordinator.async_request_refresh()

@@ -16,6 +16,9 @@ from .const import (
     DYNAMIC_EQ_RESPONSE_PREFIX,
     DYNAMIC_VOLUME_QUERY_COMMAND,
     DYNAMIC_VOLUME_RESPONSE_PREFIX,
+    LOUDNESS_OPTIONS,
+    LOUDNESS_QUERY_COMMAND,
+    LOUDNESS_RESPONSE_PREFIX,
     STATUS_SENSOR_COMMANDS,
 )
 
@@ -200,6 +203,7 @@ class DenonMarantzClient:
                 "dynamic_volume": None,
                 "dialogue_enhancer": None,
                 "dynamic_compression": None,
+                "loudness": None,
                 "status_sensors": self._empty_status_sensors(),
             }
 
@@ -222,6 +226,10 @@ class DenonMarantzClient:
         dynamic_compression_raw = await self._async_query_optional(
             DYNAMIC_COMPRESSION_QUERY_COMMAND,
             expected_prefixes=(DYNAMIC_COMPRESSION_RESPONSE_PREFIX,),
+        )
+        loudness_raw = await self._async_query_optional(
+            LOUDNESS_QUERY_COMMAND,
+            expected_prefixes=(LOUDNESS_RESPONSE_PREFIX,),
         )
         status_sensors = await self._async_get_status_sensors()
 
@@ -248,6 +256,10 @@ class DenonMarantzClient:
             "dynamic_compression": self._parse_option_status(
                 self._strip_prefix(dynamic_compression_raw, DYNAMIC_COMPRESSION_RESPONSE_PREFIX),
                 DYNAMIC_COMPRESSION_OPTIONS,
+            ),
+            "loudness": self._parse_option_status(
+                self._strip_prefix(loudness_raw, LOUDNESS_RESPONSE_PREFIX),
+                LOUDNESS_OPTIONS,
             ),
             "status_sensors": status_sensors,
         }
@@ -420,6 +432,10 @@ class DenonMarantzClient:
     async def async_set_dynamic_compression(self, option: str) -> None:
         command_value = self._option_command_value(option, DYNAMIC_COMPRESSION_OPTIONS)
         await self._async_send(f"PSDRC {command_value}", allow_timeout=True)
+
+    async def async_set_loudness(self, option: str) -> None:
+        command_value = self._option_command_value(option, LOUDNESS_OPTIONS)
+        await self._async_send(f"PSLOM {command_value}", allow_timeout=True)
 
     async def async_cursor_up(self) -> None:
         await self._async_send("MNCUP", allow_timeout=True)
