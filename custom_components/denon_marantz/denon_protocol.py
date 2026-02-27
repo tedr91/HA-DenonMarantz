@@ -346,7 +346,7 @@ class DenonMarantzClient:
         await self._async_send("MNINF", allow_timeout=True)
 
     async def async_menu(self) -> None:
-        await self._async_send("MNMEN", allow_timeout=True)
+        await self._async_send("MNMEN ON", allow_timeout=True)
 
     @staticmethod
     def _parse_volume(raw: str) -> float:
