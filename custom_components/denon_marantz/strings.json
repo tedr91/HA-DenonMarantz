@@ -22,6 +22,35 @@
     }
   },
   "entity": {
+    "button": {
+      "cursor_up": {
+        "name": "Cursor up"
+      },
+      "cursor_down": {
+        "name": "Cursor down"
+      },
+      "cursor_left": {
+        "name": "Cursor left"
+      },
+      "cursor_right": {
+        "name": "Cursor right"
+      },
+      "enter": {
+        "name": "Enter"
+      },
+      "return": {
+        "name": "Return"
+      },
+      "option": {
+        "name": "Option"
+      },
+      "info": {
+        "name": "Info"
+      },
+      "menu": {
+        "name": "Menu"
+      }
+    },
     "select": {
       "input_source": {
         "name": "Input source"

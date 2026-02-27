@@ -1,6 +1,6 @@
 [project]
 name = "ha-denonmarantz"
-version = "0.1.14"
+version = "0.1.15"
 description = "Home Assistant custom integration for Denon and Marantz AVRs"
 readme = "README.md"
 requires-python = ">=3.12"

@@ -311,6 +311,33 @@ class DenonMarantzClient:
         command_value = sound_mode.replace(" ", "")
         await self._async_send(f"MS{command_value}", allow_timeout=True)
 
+    async def async_cursor_up(self) -> None:
+        await self._async_send("MNCUP", allow_timeout=True)
+
+    async def async_cursor_down(self) -> None:
+        await self._async_send("MNCDN", allow_timeout=True)
+
+    async def async_cursor_left(self) -> None:
+        await self._async_send("MNCLT", allow_timeout=True)
+
+    async def async_cursor_right(self) -> None:
+        await self._async_send("MNCRT", allow_timeout=True)
+
+    async def async_enter(self) -> None:
+        await self._async_send("MNENT", allow_timeout=True)
+
+    async def async_return(self) -> None:
+        await self._async_send("MNRTN", allow_timeout=True)
+
+    async def async_option(self) -> None:
+        await self._async_send("MNOPT", allow_timeout=True)
+
+    async def async_info(self) -> None:
+        await self._async_send("MNINF", allow_timeout=True)
+
+    async def async_menu(self) -> None:
+        await self._async_send("MNMEN", allow_timeout=True)
+
     @staticmethod
     def _parse_volume(raw: str) -> float:
         value = raw.replace("MV", "")
