@@ -57,20 +57,22 @@
       },
       "sound_mode": {
         "name": "Sound mode"
+      },
+      "dynamic_volume": {
+        "name": "Dynamic Volume"
       }
     },
     "sensor": {
       "cinema_eq_status": {
         "name": "Cinema EQ status"
       },
-      "dynamic_eq_status": {
-        "name": "Dynamic EQ status"
-      },
-      "dynamic_volume_status": {
-        "name": "Dynamic Volume status"
-      },
       "multi_eq_status": {
         "name": "MultEQ status"
+      }
+    },
+    "switch": {
+      "dynamic_eq": {
+        "name": "Dynamic EQ"
       }
     }
   }

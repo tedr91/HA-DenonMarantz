@@ -4,7 +4,14 @@ import asyncio
 import logging
 from typing import Any
 
-from .const import DEFAULT_INPUT_SOURCES, STATUS_SENSOR_COMMANDS
+from .const import (
+    DEFAULT_INPUT_SOURCES,
+    DYNAMIC_EQ_QUERY_COMMAND,
+    DYNAMIC_EQ_RESPONSE_PREFIX,
+    DYNAMIC_VOLUME_QUERY_COMMAND,
+    DYNAMIC_VOLUME_RESPONSE_PREFIX,
+    STATUS_SENSOR_COMMANDS,
+)
 
 
 class DenonMarantzClient:
@@ -167,6 +174,8 @@ class DenonMarantzClient:
                 "source": None,
                 "muted": False,
                 "sound_mode": None,
+                "dynamic_eq": None,
+                "dynamic_volume": None,
                 "status_sensors": self._empty_status_sensors(),
             }
 
@@ -174,6 +183,14 @@ class DenonMarantzClient:
         source_raw = await self._async_query_optional("SI?")
         mute_raw = await self._async_query_optional("MU?")
         sound_mode_raw = await self._async_query_optional("MS?")
+        dynamic_eq_raw = await self._async_query_optional(
+            DYNAMIC_EQ_QUERY_COMMAND,
+            expected_prefixes=(DYNAMIC_EQ_RESPONSE_PREFIX,),
+        )
+        dynamic_volume_raw = await self._async_query_optional(
+            DYNAMIC_VOLUME_QUERY_COMMAND,
+            expected_prefixes=(DYNAMIC_VOLUME_RESPONSE_PREFIX,),
+        )
         status_sensors = await self._async_get_status_sensors()
 
         source_code = self._strip_prefix(source_raw, "SI")
@@ -186,6 +203,12 @@ class DenonMarantzClient:
             "source_options": self._source_options(source_label),
             "muted": bool(mute_raw and mute_raw.upper().endswith("ON")),
             "sound_mode": self._strip_prefix(sound_mode_raw, "MS"),
+            "dynamic_eq": self._parse_on_off_status(
+                self._strip_prefix(dynamic_eq_raw, DYNAMIC_EQ_RESPONSE_PREFIX)
+            ),
+            "dynamic_volume": self._parse_dynamic_volume_status(
+                self._strip_prefix(dynamic_volume_raw, DYNAMIC_VOLUME_RESPONSE_PREFIX)
+            ),
             "status_sensors": status_sensors,
         }
 
@@ -343,6 +366,13 @@ class DenonMarantzClient:
         command_value = sound_mode.replace(" ", "")
         await self._async_send(f"MS{command_value}", allow_timeout=True)
 
+    async def async_set_dynamic_eq(self, enabled: bool) -> None:
+        await self._async_send("PSDYNEQ ON" if enabled else "PSDYNEQ OFF", allow_timeout=True)
+
+    async def async_set_dynamic_volume(self, option: str) -> None:
+        command_value = self._dynamic_volume_command_value(option)
+        await self._async_send(f"PSDYNVOL {command_value}", allow_timeout=True)
+
     async def async_cursor_up(self) -> None:
         await self._async_send("MNCUP", allow_timeout=True)
 
@@ -393,3 +423,47 @@ class DenonMarantzClient:
         if raw.upper().startswith(upper_prefix):
             return raw[len(prefix) :].strip() or None
         return raw.strip() or None
+
+    @staticmethod
+    def _parse_on_off_status(raw: str | None) -> bool | None:
+        if not raw:
+            return None
+
+        normalized = raw.strip().upper()
+        if "ON" in normalized:
+            return True
+        if "OFF" in normalized:
+            return False
+
+        return None
+
+    @staticmethod
+    def _parse_dynamic_volume_status(raw: str | None) -> str | None:
+        if not raw:
+            return None
+
+        normalized = raw.strip().upper()
+        if "OFF" in normalized:
+            return "Off"
+        if "LIT" in normalized or "LIGHT" in normalized:
+            return "Light"
+        if "MED" in normalized or "MID" in normalized or "MIDDLE" in normalized:
+            return "Medium"
+        if "HEV" in normalized or "HEAVY" in normalized:
+            return "Heavy"
+
+        return None
+
+    @staticmethod
+    def _dynamic_volume_command_value(option: str) -> str:
+        normalized = option.strip().casefold()
+        mapping = {
+            "off": "OFF",
+            "light": "LIT",
+            "medium": "MED",
+            "heavy": "HEV",
+        }
+        if normalized in mapping:
+            return mapping[normalized]
+
+        raise ValueError(f"Unsupported Dynamic Volume option: {option}")
