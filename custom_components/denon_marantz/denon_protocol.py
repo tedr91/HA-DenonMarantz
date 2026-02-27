@@ -195,7 +195,10 @@ class DenonMarantzClient:
     async def _async_get_status_sensors(self) -> dict[str, str | None]:
         values: dict[str, str | None] = {}
         for sensor_key, command, response_prefix in STATUS_SENSOR_COMMANDS:
-            raw = await self._async_query_optional(command)
+            raw = await self._async_query_optional(
+                command,
+                expected_prefixes=(response_prefix,),
+            )
             parsed = self._strip_prefix(raw, response_prefix)
             values[sensor_key] = parsed.lstrip(" :=") if parsed else None
 
@@ -305,9 +308,13 @@ class DenonMarantzClient:
 
         return deduped
 
-    async def _async_query_optional(self, command: str) -> str | None:
+    async def _async_query_optional(
+        self,
+        command: str,
+        expected_prefixes: tuple[str, ...] | None = None,
+    ) -> str | None:
         try:
-            return await self._async_send(command)
+            return await self._async_send(command, expected_prefixes=expected_prefixes)
         except Exception as err:
             self.logger.debug("Optional AVR status query failed for %s: %s", command, err)
             return None
