@@ -23,31 +23,31 @@
   },
   "entity": {
     "button": {
-      "cursor_up": {
-        "name": "Cursor up"
+      "control_up": {
+        "name": "Control up"
       },
-      "cursor_down": {
-        "name": "Cursor down"
+      "control_down": {
+        "name": "Control down"
       },
-      "cursor_left": {
-        "name": "Cursor left"
+      "control_left": {
+        "name": "Control left"
       },
-      "cursor_right": {
-        "name": "Cursor right"
+      "control_right": {
+        "name": "Control right"
       },
-      "enter": {
+      "control_enter": {
         "name": "Enter"
       },
-      "return": {
+      "control_back": {
         "name": "Back"
       },
       "option": {
         "name": "Option"
       },
-      "info": {
+      "control_info": {
         "name": "Info"
       },
-      "menu": {
+      "control_menu": {
         "name": "Menu"
       }
     },

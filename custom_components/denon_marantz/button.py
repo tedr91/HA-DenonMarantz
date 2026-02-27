@@ -27,15 +27,15 @@ async def async_setup_entry(
 
     async_add_entities(
         [
-            DenonMarantzControlButton(entry, coordinator, "cursor_up", client.async_cursor_up),
-            DenonMarantzControlButton(entry, coordinator, "cursor_down", client.async_cursor_down),
-            DenonMarantzControlButton(entry, coordinator, "cursor_left", client.async_cursor_left),
-            DenonMarantzControlButton(entry, coordinator, "cursor_right", client.async_cursor_right),
-            DenonMarantzControlButton(entry, coordinator, "enter", client.async_enter),
-            DenonMarantzControlButton(entry, coordinator, "return", client.async_return),
+            DenonMarantzControlButton(entry, coordinator, "control_up", client.async_cursor_up),
+            DenonMarantzControlButton(entry, coordinator, "control_down", client.async_cursor_down),
+            DenonMarantzControlButton(entry, coordinator, "control_left", client.async_cursor_left),
+            DenonMarantzControlButton(entry, coordinator, "control_right", client.async_cursor_right),
+            DenonMarantzControlButton(entry, coordinator, "control_enter", client.async_enter),
+            DenonMarantzControlButton(entry, coordinator, "control_back", client.async_return),
             DenonMarantzControlButton(entry, coordinator, "option", client.async_option),
-            DenonMarantzControlButton(entry, coordinator, "info", client.async_info),
-            DenonMarantzControlButton(entry, coordinator, "menu", client.async_menu),
+            DenonMarantzControlButton(entry, coordinator, "control_info", client.async_info),
+            DenonMarantzControlButton(entry, coordinator, "control_menu", client.async_menu),
         ]
     )
 
