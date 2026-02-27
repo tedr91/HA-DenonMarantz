@@ -6,6 +6,12 @@ from typing import Any
 
 from .const import (
     DEFAULT_INPUT_SOURCES,
+    DIALOGUE_ENHANCER_OPTIONS,
+    DIALOGUE_ENHANCER_QUERY_COMMAND,
+    DIALOGUE_ENHANCER_RESPONSE_PREFIX,
+    DYNAMIC_COMPRESSION_OPTIONS,
+    DYNAMIC_COMPRESSION_QUERY_COMMAND,
+    DYNAMIC_COMPRESSION_RESPONSE_PREFIX,
     DYNAMIC_EQ_QUERY_COMMAND,
     DYNAMIC_EQ_RESPONSE_PREFIX,
     DYNAMIC_VOLUME_QUERY_COMMAND,
@@ -176,6 +182,8 @@ class DenonMarantzClient:
                 "sound_mode": None,
                 "dynamic_eq": None,
                 "dynamic_volume": None,
+                "dialogue_enhancer": None,
+                "dynamic_compression": None,
                 "status_sensors": self._empty_status_sensors(),
             }
 
@@ -190,6 +198,14 @@ class DenonMarantzClient:
         dynamic_volume_raw = await self._async_query_optional(
             DYNAMIC_VOLUME_QUERY_COMMAND,
             expected_prefixes=(DYNAMIC_VOLUME_RESPONSE_PREFIX,),
+        )
+        dialogue_enhancer_raw = await self._async_query_optional(
+            DIALOGUE_ENHANCER_QUERY_COMMAND,
+            expected_prefixes=(DIALOGUE_ENHANCER_RESPONSE_PREFIX,),
+        )
+        dynamic_compression_raw = await self._async_query_optional(
+            DYNAMIC_COMPRESSION_QUERY_COMMAND,
+            expected_prefixes=(DYNAMIC_COMPRESSION_RESPONSE_PREFIX,),
         )
         status_sensors = await self._async_get_status_sensors()
 
@@ -208,6 +224,14 @@ class DenonMarantzClient:
             ),
             "dynamic_volume": self._parse_dynamic_volume_status(
                 self._strip_prefix(dynamic_volume_raw, DYNAMIC_VOLUME_RESPONSE_PREFIX)
+            ),
+            "dialogue_enhancer": self._parse_option_status(
+                self._strip_prefix(dialogue_enhancer_raw, DIALOGUE_ENHANCER_RESPONSE_PREFIX),
+                DIALOGUE_ENHANCER_OPTIONS,
+            ),
+            "dynamic_compression": self._parse_option_status(
+                self._strip_prefix(dynamic_compression_raw, DYNAMIC_COMPRESSION_RESPONSE_PREFIX),
+                DYNAMIC_COMPRESSION_OPTIONS,
             ),
             "status_sensors": status_sensors,
         }
@@ -373,6 +397,14 @@ class DenonMarantzClient:
         command_value = self._dynamic_volume_command_value(option)
         await self._async_send(f"PSDYNVOL {command_value}", allow_timeout=True)
 
+    async def async_set_dialogue_enhancer(self, option: str) -> None:
+        command_value = self._option_command_value(option, DIALOGUE_ENHANCER_OPTIONS)
+        await self._async_send(f"PSDIL {command_value}", allow_timeout=True)
+
+    async def async_set_dynamic_compression(self, option: str) -> None:
+        command_value = self._option_command_value(option, DYNAMIC_COMPRESSION_OPTIONS)
+        await self._async_send(f"PSDRC {command_value}", allow_timeout=True)
+
     async def async_cursor_up(self) -> None:
         await self._async_send("MNCUP", allow_timeout=True)
 
@@ -467,3 +499,38 @@ class DenonMarantzClient:
             return mapping[normalized]
 
         raise ValueError(f"Unsupported Dynamic Volume option: {option}")
+
+    @staticmethod
+    def _parse_option_status(raw: str | None, options: list[str]) -> str | None:
+        if not raw:
+            return None
+
+        normalized = raw.strip().upper()
+        token_aliases: dict[str, tuple[str, ...]] = {
+            "off": ("OFF",),
+            "auto": ("AUTO",),
+            "low": ("LOW", "LIT", "LIGHT"),
+            "medium": ("MED", "MID", "MIDDLE"),
+            "high": ("HIGH", "HI", "HEV", "HEAVY"),
+        }
+        for option in options:
+            for token in token_aliases.get(option.casefold(), (option.upper(),)):
+                if token in normalized:
+                    return option
+
+        return None
+
+    @staticmethod
+    def _option_command_value(option: str, options: list[str]) -> str:
+        normalized = option.strip().casefold()
+        if normalized not in {item.casefold() for item in options}:
+            raise ValueError(f"Unsupported option: {option}")
+
+        mapping = {
+            "off": "OFF",
+            "auto": "AUTO",
+            "low": "LOW",
+            "medium": "MID",
+            "high": "HIGH",
+        }
+        return mapping.get(normalized, option.strip().upper())

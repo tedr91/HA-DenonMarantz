@@ -60,6 +60,12 @@
       },
       "dynamic_volume": {
         "name": "Dynamic Volume"
+      },
+      "dialogue_enhancer": {
+        "name": "Dialogue Enhancer"
+      },
+      "dynamic_compression": {
+        "name": "Dynamic Compression"
       }
     },
     "sensor": {
