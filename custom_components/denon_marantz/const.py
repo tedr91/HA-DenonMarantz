@@ -15,3 +15,13 @@ DEFAULT_SOUND_MODES: list[str] = [
 	"GAME",
 	"AURO3D",
 ]
+
+DEFAULT_INPUT_SOURCES: list[str] = [
+	"CD",
+	"TV",
+	"SAT/CBL",
+	"GAME",
+	"AUX",
+	"BLUETOOTH",
+	"TUNER",
+]

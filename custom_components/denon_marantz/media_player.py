@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DEFAULT_INPUT_SOURCES, DOMAIN
 from .coordinator import DenonMarantzDataUpdateCoordinator
 from .denon_protocol import DenonMarantzClient
 from .entity import build_device_info
@@ -41,7 +41,7 @@ class DenonMarantzMediaPlayer(
         | MediaPlayerEntityFeature.VOLUME_MUTE
     )
 
-    _attr_source_list = ["CD", "TV", "SAT/CBL", "GAME", "AUX", "BLUETOOTH", "TUNER"]
+    _attr_source_list = DEFAULT_INPUT_SOURCES
 
     def __init__(
         self,

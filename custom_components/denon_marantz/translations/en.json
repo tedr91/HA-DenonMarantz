@@ -22,7 +22,15 @@
     }
   },
   "entity": {
+    "switch": {
+      "mute": {
+        "name": "Mute"
+      }
+    },
     "select": {
+      "input_source": {
+        "name": "Input source"
+      },
       "sound_mode": {
         "name": "Sound mode"
       }
