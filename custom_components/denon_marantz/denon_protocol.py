@@ -430,7 +430,7 @@ class DenonMarantzClient:
         await self._async_send(f"PSDIL {command_value}", allow_timeout=True)
 
     async def async_set_dynamic_compression(self, option: str) -> None:
-        command_value = self._option_command_value(option, DYNAMIC_COMPRESSION_OPTIONS)
+        command_value = self._dynamic_compression_command_value(option)
         await self._async_send(f"PSDRC {command_value}", allow_timeout=True)
 
     async def async_set_loudness(self, option: str) -> None:
@@ -526,6 +526,9 @@ class DenonMarantzClient:
             "light": "LIT",
             "medium": "MED",
             "heavy": "HEV",
+            "lit": "LIT",
+            "med": "MED",
+            "hev": "HEV",
         }
         if normalized in mapping:
             return mapping[normalized]
@@ -566,3 +569,18 @@ class DenonMarantzClient:
             "high": "HIGH",
         }
         return mapping.get(normalized, option.strip().upper())
+
+    @staticmethod
+    def _dynamic_compression_command_value(option: str) -> str:
+        normalized = option.strip().casefold()
+        mapping = {
+            "auto": "AUTO",
+            "low": "LOW",
+            "medium": "MID",
+            "high": "HI",
+            "off": "OFF",
+        }
+        if normalized in mapping:
+            return mapping[normalized]
+
+        raise ValueError(f"Unsupported Dynamic Compression option: {option}")
