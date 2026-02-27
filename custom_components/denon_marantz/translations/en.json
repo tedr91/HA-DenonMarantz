@@ -36,19 +36,19 @@
         "name": "Control right"
       },
       "control_enter": {
-        "name": "Enter"
+        "name": "Control Enter"
       },
       "control_back": {
-        "name": "Back"
+        "name": "Control Back"
       },
-      "option": {
-        "name": "Option"
+      "control_option": {
+        "name": "Control Option"
       },
       "control_info": {
-        "name": "Info"
+        "name": "Control Info"
       },
       "control_menu": {
-        "name": "Menu"
+        "name": "Control Menu"
       }
     },
     "select": {

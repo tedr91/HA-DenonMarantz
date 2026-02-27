@@ -33,7 +33,7 @@ async def async_setup_entry(
             DenonMarantzControlButton(entry, coordinator, "control_right", client.async_cursor_right),
             DenonMarantzControlButton(entry, coordinator, "control_enter", client.async_enter),
             DenonMarantzControlButton(entry, coordinator, "control_back", client.async_return),
-            DenonMarantzControlButton(entry, coordinator, "option", client.async_option),
+            DenonMarantzControlButton(entry, coordinator, "control_option", client.async_option),
             DenonMarantzControlButton(entry, coordinator, "control_info", client.async_info),
             DenonMarantzControlButton(entry, coordinator, "control_menu", client.async_menu),
         ]
