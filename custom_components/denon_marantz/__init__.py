@@ -9,6 +9,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 
 from .const import (
+    ATTR_ALLOW_TIMEOUT,
     CONF_ADD_EXTENDED_ENTITIES,
     CONF_INPUT_FILTER,
     DEFAULT_ADD_EXTENDED_ENTITIES,
@@ -40,6 +41,7 @@ SEND_COMMAND_SCHEMA = vol.Schema(
             cv.ensure_list,
             [cv.string],
         ),
+        vol.Optional(ATTR_ALLOW_TIMEOUT): bool,
     }
 )
 
@@ -84,10 +86,17 @@ async def _async_handle_send_command_service(
         prefix.strip() for prefix in call.data.get(ATTR_EXPECTED_PREFIXES, []) if prefix.strip()
     )
 
+    allow_timeout_value = call.data.get(ATTR_ALLOW_TIMEOUT)
+    if allow_timeout_value is None:
+        allow_timeout = not command.endswith("?") and not expected_prefixes
+    else:
+        allow_timeout = bool(allow_timeout_value)
+
     response = await client.async_send_command(
         command=command,
         timeout=timeout,
         expected_prefixes=expected_prefixes or None,
+        allow_timeout=allow_timeout,
     )
 
     return {
@@ -108,7 +117,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             SERVICE_SEND_COMMAND,
             _handle_send_command_service,
             schema=SEND_COMMAND_SCHEMA,
-            supports_response=SupportsResponse.ONLY,
+            supports_response=SupportsResponse.OPTIONAL,
         )
 
     return True

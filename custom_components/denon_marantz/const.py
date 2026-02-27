@@ -13,6 +13,7 @@ ATTR_COMMAND = "command"
 ATTR_ENTRY_ID = "entry_id"
 ATTR_TIMEOUT = "timeout"
 ATTR_EXPECTED_PREFIXES = "expected_prefixes"
+ATTR_ALLOW_TIMEOUT = "allow_timeout"
 
 DEFAULT_SOUND_MODES: list[str] = [
 	"STEREO",

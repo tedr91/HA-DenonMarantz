@@ -1,6 +1,6 @@
 send_command:
   name: Send Command
-  description: Send a raw command to the configured AVR and return its response.
+  description: Send a raw command to the configured AVR and optionally return its response.
   fields:
     command:
       name: Command
@@ -31,3 +31,9 @@ send_command:
       required: false
       selector:
         object:
+    allow_timeout:
+      name: Allow Timeout
+      description: Treat missing immediate response as success (recommended for write commands like MV45).
+      required: false
+      selector:
+        boolean:

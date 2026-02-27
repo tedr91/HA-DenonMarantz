@@ -112,6 +112,7 @@ class DenonMarantzClient:
         command: str,
         timeout: float = 2.0,
         expected_prefixes: tuple[str, ...] | None = None,
+        allow_timeout: bool = False,
     ) -> str:
         normalized_prefixes: tuple[str, ...] | None = None
         if expected_prefixes:
@@ -121,6 +122,7 @@ class DenonMarantzClient:
             command=command,
             timeout=timeout,
             expected_prefixes=normalized_prefixes,
+            allow_timeout=allow_timeout,
         )
 
     async def _async_send_once(
