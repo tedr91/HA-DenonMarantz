@@ -205,6 +205,9 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class DenonMarantzOptionsFlow(config_entries.OptionsFlow):
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        self._config_entry = config_entry
+
     async def async_step_init(self, user_input: dict | None = None) -> FlowResult:
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
@@ -213,14 +216,14 @@ class DenonMarantzOptionsFlow(config_entries.OptionsFlow):
             {
                 vol.Required(
                     CONF_ADD_EXTENDED_ENTITIES,
-                    default=self.config_entry.options.get(
+                    default=self._config_entry.options.get(
                         CONF_ADD_EXTENDED_ENTITIES,
                         DEFAULT_ADD_EXTENDED_ENTITIES,
                     ),
                 ): bool,
                 vol.Optional(
                     CONF_INPUT_FILTER,
-                    default=self.config_entry.options.get(
+                    default=self._config_entry.options.get(
                         CONF_INPUT_FILTER,
                         DEFAULT_INPUT_FILTER,
                     ),
