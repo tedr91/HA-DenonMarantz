@@ -25,3 +25,10 @@ DEFAULT_INPUT_SOURCES: list[str] = [
 	"BLUETOOTH",
 	"TUNER",
 ]
+
+STATUS_SENSOR_COMMANDS: tuple[tuple[str, str, str], ...] = (
+	("cinema_eq_status", "PSCINEMA EQ ?", "PSCINEMA EQ"),
+	("dynamic_eq_status", "PSDYNEQ ?", "PSDYNEQ"),
+	("dynamic_volume_status", "PSDYNVOL ?", "PSDYNVOL"),
+	("multi_eq_status", "PSMULTEQ ?", "PSMULTEQ"),
+)

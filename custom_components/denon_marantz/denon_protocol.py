@@ -4,7 +4,7 @@ import asyncio
 import logging
 from typing import Any
 
-from .const import DEFAULT_INPUT_SOURCES
+from .const import DEFAULT_INPUT_SOURCES, STATUS_SENSOR_COMMANDS
 
 
 class DenonMarantzClient:
@@ -167,12 +167,14 @@ class DenonMarantzClient:
                 "source": None,
                 "muted": False,
                 "sound_mode": None,
+                "status_sensors": self._empty_status_sensors(),
             }
 
         volume_raw = await self._async_query_optional("MV?")
         source_raw = await self._async_query_optional("SI?")
         mute_raw = await self._async_query_optional("MU?")
         sound_mode_raw = await self._async_query_optional("MS?")
+        status_sensors = await self._async_get_status_sensors()
 
         source_code = self._strip_prefix(source_raw, "SI")
         source_label = self._source_label_from_code(source_code)
@@ -184,7 +186,20 @@ class DenonMarantzClient:
             "source_options": self._source_options(source_label),
             "muted": bool(mute_raw and mute_raw.upper().endswith("ON")),
             "sound_mode": self._strip_prefix(sound_mode_raw, "MS"),
+            "status_sensors": status_sensors,
         }
+
+    def _empty_status_sensors(self) -> dict[str, str | None]:
+        return {sensor_key: None for sensor_key, _, _ in STATUS_SENSOR_COMMANDS}
+
+    async def _async_get_status_sensors(self) -> dict[str, str | None]:
+        values: dict[str, str | None] = {}
+        for sensor_key, command, response_prefix in STATUS_SENSOR_COMMANDS:
+            raw = await self._async_query_optional(command)
+            parsed = self._strip_prefix(raw, response_prefix)
+            values[sensor_key] = parsed.lstrip(" :=") if parsed else None
+
+        return values
 
     async def _async_ensure_source_map(self) -> None:
         if self._source_map_fetched:

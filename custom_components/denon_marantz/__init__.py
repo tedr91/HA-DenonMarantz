@@ -8,7 +8,12 @@ from .const import DOMAIN
 from .coordinator import DenonMarantzDataUpdateCoordinator
 from .denon_protocol import DenonMarantzClient
 
-PLATFORMS: list[Platform] = [Platform.MEDIA_PLAYER, Platform.SELECT, Platform.BUTTON]
+PLATFORMS: list[Platform] = [
+    Platform.MEDIA_PLAYER,
+    Platform.SELECT,
+    Platform.BUTTON,
+    Platform.SENSOR,
+]
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
