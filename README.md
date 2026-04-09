@@ -21,6 +21,15 @@ Home Assistant custom integration for Denon and Marantz AV receivers based on th
 custom_components/
   denon_marantz/
     __init__.py
+    brand/
+      icon.png
+      icon@2x.png
+      dark_icon.png
+      dark_icon@2x.png
+      logo.png
+      logo@2x.png
+      dark_logo.png
+      dark_logo@2x.png
     manifest.json
     config_flow.py
     const.py
@@ -31,6 +40,14 @@ custom_components/
     translations/
       en.json
 ```
+
+## Branding
+
+This integration includes local Home Assistant brand assets in `custom_components/denon_marantz/brand/`.
+The square icon and landscape logo combine Denon and Marantz wordmarks so the integration is recognizable for both receiver families.
+
+The composed assets were derived from the Wikimedia Commons `Denon logo.svg` and `Marantz logo.svg` text-logo files.
+Denon and Marantz remain trademarks of their respective owners.
 
 ## Local install in Home Assistant
 
