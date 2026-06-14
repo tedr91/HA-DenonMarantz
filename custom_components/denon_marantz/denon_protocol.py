@@ -465,7 +465,7 @@ class DenonMarantzClient:
         await self._async_send("MVDOWN", allow_timeout=True)
 
     async def async_set_volume_level(self, level: float) -> None:
-        avr_value = max(0, min(98, int(round(level * 98))))
+        avr_value = max(0, min(98, int(round(level * 100))))
         await self._async_send(f"MV{avr_value:02d}", allow_timeout=True)
 
     async def async_set_mute(self, mute: bool) -> None:
@@ -529,7 +529,7 @@ class DenonMarantzClient:
     def _parse_volume(raw: str) -> float:
         value = raw.replace("MV", "")
         try:
-            return max(0.0, min(1.0, int(value[:2]) / 98.0))
+            return max(0.0, min(1.0, int(value[:2]) / 100.0))
         except (TypeError, ValueError, IndexError):
             return 0.0
 
