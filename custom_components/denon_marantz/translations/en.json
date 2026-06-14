@@ -83,6 +83,9 @@
       "sound_mode": {
         "name": "Sound mode"
       },
+      "active_speakers": {
+        "name": "Active speakers"
+      },
       "cinema_eq_status": {
         "name": "Cinema EQ status"
       },

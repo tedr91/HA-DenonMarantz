@@ -60,3 +60,81 @@ DYNAMIC_COMPRESSION_OPTIONS: list[str] = ["Off", "Auto", "Low", "Medium", "High"
 LOUDNESS_QUERY_COMMAND = "PSLOM ?"
 LOUDNESS_RESPONSE_PREFIX = "PSLOM"
 LOUDNESS_OPTIONS: list[str] = ["Off", "On"]
+
+ACTIVE_SPEAKERS_QUERY_COMMAND = "CV?"
+ACTIVE_SPEAKERS_RESPONSE_PREFIX = "CV"
+ACTIVE_SPEAKERS_TERMINATOR = "CVEND"
+
+# Maps Channel Volume (CV) speaker codes to human-friendly names. The receiver
+# only reports the channels that are active for the current surround mode, so the
+# set of codes returned by "CV?" represents the currently active speakers. The
+# insertion order below is the canonical display order for the sensor state.
+CHANNEL_MAP: dict[str, str] = {
+	"FL": "Front Left",
+	"FR": "Front Right",
+	"C": "Center",
+	"SW": "Subwoofer",
+	"SW2": "Subwoofer 2",
+	"SW3": "Subwoofer 3",
+	"SW4": "Subwoofer 4",
+	"SL": "Surround Left",
+	"SR": "Surround Right",
+	"SBL": "Surround Back Left",
+	"SBR": "Surround Back Right",
+	"SB": "Surround Back",
+	"FHL": "Front Height Left",
+	"FHR": "Front Height Right",
+	"FWL": "Front Wide Left",
+	"FWR": "Front Wide Right",
+	"TFL": "Top Front Left",
+	"TFR": "Top Front Right",
+	"TML": "Top Middle Left",
+	"TMR": "Top Middle Right",
+	"TRL": "Top Rear Left",
+	"TRR": "Top Rear Right",
+	"RHL": "Rear Height Left",
+	"RHR": "Rear Height Right",
+	"FDL": "Front Dolby Left",
+	"FDR": "Front Dolby Right",
+	"SDL": "Surround Dolby Left",
+	"SDR": "Surround Dolby Right",
+	"BDL": "Back Dolby Left",
+	"BDR": "Back Dolby Right",
+	"SHL": "Surround Height Left",
+	"SHR": "Surround Height Right",
+	"TS": "Top Surround",
+	"CH": "Center Height",
+}
+
+# Channel codes that represent LFE / subwoofer outputs. These contribute to the
+# ".Y" (middle) figure of an "X.Y.Z" speaker-layout string.
+SUBWOOFER_CHANNELS: frozenset[str] = frozenset({"SW", "SW2", "SW3", "SW4"})
+
+# Channel codes that represent overhead / height effect speakers. These contribute
+# to the trailing ".Z" figure of an "X.Y.Z" speaker-layout string. Every channel
+# that is neither a subwoofer nor a height speaker is treated as an ear-level
+# "bed" channel and contributes to the leading "X" figure.
+HEIGHT_CHANNELS: frozenset[str] = frozenset(
+	{
+		"FHL",
+		"FHR",
+		"TFL",
+		"TFR",
+		"TML",
+		"TMR",
+		"TRL",
+		"TRR",
+		"RHL",
+		"RHR",
+		"FDL",
+		"FDR",
+		"SDL",
+		"SDR",
+		"BDL",
+		"BDR",
+		"SHL",
+		"SHR",
+		"TS",
+		"CH",
+	}
+)

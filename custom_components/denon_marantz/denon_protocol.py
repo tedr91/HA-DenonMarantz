@@ -5,6 +5,10 @@ import logging
 from typing import Any
 
 from .const import (
+    ACTIVE_SPEAKERS_QUERY_COMMAND,
+    ACTIVE_SPEAKERS_RESPONSE_PREFIX,
+    ACTIVE_SPEAKERS_TERMINATOR,
+    CHANNEL_MAP,
     DEFAULT_INPUT_SOURCES,
     DIALOGUE_ENHANCER_OPTIONS,
     DIALOGUE_ENHANCER_QUERY_COMMAND,
@@ -16,10 +20,12 @@ from .const import (
     DYNAMIC_EQ_RESPONSE_PREFIX,
     DYNAMIC_VOLUME_QUERY_COMMAND,
     DYNAMIC_VOLUME_RESPONSE_PREFIX,
+    HEIGHT_CHANNELS,
     LOUDNESS_OPTIONS,
     LOUDNESS_QUERY_COMMAND,
     LOUDNESS_RESPONSE_PREFIX,
     STATUS_SENSOR_COMMANDS,
+    SUBWOOFER_CHANNELS,
 )
 
 
@@ -214,6 +220,9 @@ class DenonMarantzClient:
                 "dialogue_enhancer": None,
                 "dynamic_compression": None,
                 "loudness": None,
+                "active_speakers": None,
+                "active_speaker_codes": None,
+                "speaker_layout": None,
                 "status_sensors": self._empty_status_sensors(),
             }
 
@@ -227,6 +236,7 @@ class DenonMarantzClient:
         dialogue_enhancer_raw: str | None = None
         dynamic_compression_raw: str | None = None
         loudness_raw: str | None = None
+        active_speaker_codes: list[str] = []
         if self._include_extended_entities:
             dynamic_eq_raw = await self._async_query_optional(
                 DYNAMIC_EQ_QUERY_COMMAND,
@@ -248,6 +258,7 @@ class DenonMarantzClient:
                 LOUDNESS_QUERY_COMMAND,
                 expected_prefixes=(LOUDNESS_RESPONSE_PREFIX,),
             )
+            active_speaker_codes = await self._async_query_active_speakers()
         status_sensors = (
             await self._async_get_status_sensors()
             if self._include_extended_entities
@@ -297,6 +308,19 @@ class DenonMarantzClient:
                     self._strip_prefix(loudness_raw, LOUDNESS_RESPONSE_PREFIX),
                     LOUDNESS_OPTIONS,
                 )
+                if self._include_extended_entities
+                else None
+            ),
+            "active_speakers": (
+                self._channel_names(active_speaker_codes)
+                if self._include_extended_entities
+                else None
+            ),
+            "active_speaker_codes": (
+                active_speaker_codes if self._include_extended_entities else None
+            ),
+            "speaker_layout": (
+                self._compute_speaker_layout(active_speaker_codes)
                 if self._include_extended_entities
                 else None
             ),
@@ -394,6 +418,94 @@ class DenonMarantzClient:
             label = parts[0].strip()
 
         return code, label
+
+    async def _async_query_active_speakers(self) -> list[str]:
+        try:
+            return await self._async_get_active_speakers()
+        except Exception as err:
+            self.logger.debug("Optional AVR active speakers query failed: %s", err)
+            return []
+
+    async def _async_get_active_speakers(self) -> list[str]:
+        async with self._lock:
+            await self.connect()
+
+            assert self._writer is not None
+            assert self._reader is not None
+
+            self._writer.write(f"{ACTIVE_SPEAKERS_QUERY_COMMAND}\r".encode("ascii"))
+            await self._writer.drain()
+
+            loop = asyncio.get_running_loop()
+            deadline = loop.time() + 1.5
+            found: list[str] = []
+            seen: set[str] = set()
+
+            while True:
+                remaining = deadline - loop.time()
+                if remaining <= 0:
+                    break
+
+                try:
+                    response = await asyncio.wait_for(self._reader.readuntil(b"\r"), timeout=remaining)
+                except TimeoutError:
+                    break
+
+                decoded = response.decode("ascii", errors="ignore").strip()
+                upper = decoded.upper()
+
+                if not upper.startswith(ACTIVE_SPEAKERS_RESPONSE_PREFIX):
+                    if upper.startswith("E"):
+                        return []
+                    continue
+
+                if upper == ACTIVE_SPEAKERS_TERMINATOR:
+                    break
+
+                code = self._parse_channel_code(decoded)
+                if code and code not in seen:
+                    seen.add(code)
+                    found.append(code)
+
+            return self._order_channel_codes(found)
+
+    @staticmethod
+    def _parse_channel_code(line: str) -> str | None:
+        payload = line[len(ACTIVE_SPEAKERS_RESPONSE_PREFIX) :].strip()
+        if not payload:
+            return None
+
+        parts = payload.split()
+        code = parts[0].strip().upper()
+        return code or None
+
+    @staticmethod
+    def _order_channel_codes(codes: list[str]) -> list[str]:
+        present = set(codes)
+        ordered = [code for code in CHANNEL_MAP if code in present]
+        ordered.extend(code for code in codes if code not in CHANNEL_MAP)
+        return ordered
+
+    @staticmethod
+    def _channel_names(codes: list[str]) -> list[str]:
+        return [CHANNEL_MAP.get(code, code) for code in codes]
+
+    @staticmethod
+    def _compute_speaker_layout(codes: list[str]) -> str | None:
+        if not codes:
+            return None
+
+        bed = sum(
+            1
+            for code in codes
+            if code not in SUBWOOFER_CHANNELS and code not in HEIGHT_CHANNELS
+        )
+        subwoofers = sum(1 for code in codes if code in SUBWOOFER_CHANNELS)
+        heights = sum(1 for code in codes if code in HEIGHT_CHANNELS)
+
+        if heights:
+            return f"{bed}.{subwoofers}.{heights}"
+        return f"{bed}.{subwoofers}"
 
     def _source_label_from_code(self, code: str | None) -> str | None:
         if not code:

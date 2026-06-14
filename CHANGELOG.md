@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.2 - 2026-06-13
+
+### Added
+
+- New read-only "Active speakers" sensor (extended entities) that reports the channels currently active for the present surround mode, queried via the `CV?` (Channel Volume) command.
+- The Active speakers sensor exposes `channels` (raw channel codes), `speaker_count`, and a computed `layout` attribute (e.g. `5.1.2`) derived from the active bed, subwoofer, and height channels.
+
 ## 1.0.1 - 2026-06-13
 
 ### Fixed
