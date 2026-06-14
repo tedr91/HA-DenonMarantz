@@ -28,6 +28,7 @@ async def async_setup_entry(
 
     entities: list[SensorEntity] = [
         DenonMarantzSoundModeSensor(entry, coordinator),
+        DenonMarantzActiveSpeakersSensor(entry, coordinator),
     ]
 
     if entry.options.get(CONF_ADD_EXTENDED_ENTITIES, DEFAULT_ADD_EXTENDED_ENTITIES):
@@ -37,7 +38,6 @@ async def async_setup_entry(
                 for sensor_key, _, _ in STATUS_SENSOR_COMMANDS
             ]
         )
-        entities.append(DenonMarantzActiveSpeakersSensor(entry, coordinator))
 
     async_add_entities(entities)
 

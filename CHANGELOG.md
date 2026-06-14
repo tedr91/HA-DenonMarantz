@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.3 - 2026-06-14
+
+### Added
+
+- The "Active speakers" sensor (with its computed `layout` attribute) is now part of the default entity set and no longer requires the "Add Extended Entities" option.
+- Help text for the "Add Extended Entities" option explaining what it adds and noting the potential performance impact of the extra polling.
+
+### Changed
+
+- The "Input Filter" option now uses a chip-style picker (like the "Add Label" UI): choose input sources from a dropdown populated with the receiver's actual sources, or type your own.
+- Input source filtering is now an exact, case-insensitive match against the selected sources instead of a partial substring match.
+- In the Options dialog, "Add Extended Entities" now appears below "Input Filter".
+
 ## 1.0.2 - 2026-06-13
 
 ### Added

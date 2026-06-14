@@ -6,7 +6,7 @@ CONF_PORT = "port"
 CONF_ADD_EXTENDED_ENTITIES = "add_extended_entities"
 CONF_INPUT_FILTER = "input_filter"
 DEFAULT_ADD_EXTENDED_ENTITIES = False
-DEFAULT_INPUT_FILTER = ""
+DEFAULT_INPUT_FILTER: list[str] = []
 
 SERVICE_SEND_COMMAND = "send_command"
 ATTR_COMMAND = "command"

@@ -132,7 +132,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         include_extended_entities=bool(
             entry.options.get(CONF_ADD_EXTENDED_ENTITIES, DEFAULT_ADD_EXTENDED_ENTITIES)
         ),
-        input_filter=str(entry.options.get(CONF_INPUT_FILTER, DEFAULT_INPUT_FILTER)),
+        input_filter=entry.options.get(CONF_INPUT_FILTER, DEFAULT_INPUT_FILTER),
     )
     coordinator = DenonMarantzDataUpdateCoordinator(hass, client)
     await coordinator.async_config_entry_first_refresh()

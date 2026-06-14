@@ -35,7 +35,7 @@ class DenonMarantzClient:
         host: str,
         port: int,
         include_extended_entities: bool = False,
-        input_filter: str = "",
+        input_filter: list[str] | None = None,
     ) -> None:
         self.host = host
         self.port = port
@@ -236,7 +236,6 @@ class DenonMarantzClient:
         dialogue_enhancer_raw: str | None = None
         dynamic_compression_raw: str | None = None
         loudness_raw: str | None = None
-        active_speaker_codes: list[str] = []
         if self._include_extended_entities:
             dynamic_eq_raw = await self._async_query_optional(
                 DYNAMIC_EQ_QUERY_COMMAND,
@@ -258,7 +257,7 @@ class DenonMarantzClient:
                 LOUDNESS_QUERY_COMMAND,
                 expected_prefixes=(LOUDNESS_RESPONSE_PREFIX,),
             )
-            active_speaker_codes = await self._async_query_active_speakers()
+        active_speaker_codes = await self._async_query_active_speakers()
         status_sensors = (
             await self._async_get_status_sensors()
             if self._include_extended_entities
@@ -311,19 +310,9 @@ class DenonMarantzClient:
                 if self._include_extended_entities
                 else None
             ),
-            "active_speakers": (
-                self._channel_names(active_speaker_codes)
-                if self._include_extended_entities
-                else None
-            ),
-            "active_speaker_codes": (
-                active_speaker_codes if self._include_extended_entities else None
-            ),
-            "speaker_layout": (
-                self._compute_speaker_layout(active_speaker_codes)
-                if self._include_extended_entities
-                else None
-            ),
+            "active_speakers": self._channel_names(active_speaker_codes),
+            "active_speaker_codes": active_speaker_codes,
+            "speaker_layout": self._compute_speaker_layout(active_speaker_codes),
             "status_sensors": status_sensors,
         }
 
@@ -517,7 +506,7 @@ class DenonMarantzClient:
 
         return code.strip()
 
-    def _source_options(self, current_source: str | None) -> list[str]:
+    def available_source_labels(self) -> list[str]:
         options = list(DEFAULT_INPUT_SOURCES)
         options.extend(self._source_code_to_label.values())
 
@@ -530,7 +519,10 @@ class DenonMarantzClient:
             seen.add(normalized)
             deduped.append(option)
 
-        filtered = self._filter_source_options(deduped)
+        return deduped
+
+    def _source_options(self, current_source: str | None) -> list[str]:
+        filtered = self._filter_source_options(self.available_source_labels())
         if current_source:
             current_normalized = current_source.casefold()
             if all(option.casefold() != current_normalized for option in filtered):
@@ -545,15 +537,18 @@ class DenonMarantzClient:
         return [
             option
             for option in options
-            if any(token in option.casefold() for token in self._input_filter_tokens)
+            if option.casefold() in self._input_filter_tokens
         ]
 
     @staticmethod
-    def _parse_input_filter(raw_filter: str) -> tuple[str, ...]:
+    def _parse_input_filter(raw_filter: list[str] | None) -> tuple[str, ...]:
+        if not raw_filter:
+            return ()
+
         return tuple(
             token.strip().casefold()
-            for token in raw_filter.split(",")
-            if token.strip()
+            for token in raw_filter
+            if isinstance(token, str) and token.strip()
         )
 
     async def _async_query_optional(

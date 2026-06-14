@@ -28,6 +28,10 @@
         "data": {
           "add_extended_entities": "Add Extended Entities",
           "input_filter": "Input Filter"
+        },
+        "data_description": {
+          "input_filter": "Choose the input sources to show. Leave empty to show all sources. Only the exact sources you select are shown (matching is case-insensitive).",
+          "add_extended_entities": "Adds extra audio-tuning entities (Dynamic Volume, Dialogue Enhancer, Dynamic Compression, Loudness, Dynamic EQ, and status sensors). This polls the receiver for additional data on every update, which may cause performance issues on some receivers."
         }
       }
     }

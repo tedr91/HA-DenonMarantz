@@ -10,6 +10,11 @@ from homeassistant.components import dhcp
 from homeassistant.components import ssdp
 from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.selector import (
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
 
 from .const import (
     CONF_ADD_EXTENDED_ENTITIES,
@@ -17,6 +22,7 @@ from .const import (
     CONF_PORT,
     DEFAULT_ADD_EXTENDED_ENTITIES,
     DEFAULT_INPUT_FILTER,
+    DEFAULT_INPUT_SOURCES,
     DEFAULT_NAME,
     DEFAULT_PORT,
     DOMAIN,
@@ -212,8 +218,29 @@ class DenonMarantzOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
+        current_filter = self._normalize_filter(
+            self._config_entry.options.get(CONF_INPUT_FILTER, DEFAULT_INPUT_FILTER)
+        )
+
+        filter_options = self._available_source_labels()
+        for value in current_filter:
+            if value not in filter_options:
+                filter_options.append(value)
+
         schema = vol.Schema(
             {
+                vol.Optional(
+                    CONF_INPUT_FILTER,
+                    default=current_filter,
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=filter_options,
+                        multiple=True,
+                        custom_value=True,
+                        mode=SelectSelectorMode.DROPDOWN,
+                        sort=True,
+                    )
+                ),
                 vol.Required(
                     CONF_ADD_EXTENDED_ENTITIES,
                     default=self._config_entry.options.get(
@@ -221,13 +248,22 @@ class DenonMarantzOptionsFlow(config_entries.OptionsFlow):
                         DEFAULT_ADD_EXTENDED_ENTITIES,
                     ),
                 ): bool,
-                vol.Optional(
-                    CONF_INPUT_FILTER,
-                    default=self._config_entry.options.get(
-                        CONF_INPUT_FILTER,
-                        DEFAULT_INPUT_FILTER,
-                    ),
-                ): str,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)
+
+    @staticmethod
+    def _normalize_filter(value: object) -> list[str]:
+        if isinstance(value, list):
+            return [str(token).strip() for token in value if str(token).strip()]
+        return []
+
+    def _available_source_labels(self) -> list[str]:
+        data = self.hass.data.get(DOMAIN, {}).get(self._config_entry.entry_id)
+        client = data.get("client") if data else None
+        if client is not None:
+            try:
+                return client.available_source_labels()
+            except Exception:  # noqa: BLE001 - fall back to defaults on any failure
+                pass
+        return list(DEFAULT_INPUT_SOURCES)
