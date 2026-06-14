@@ -634,9 +634,21 @@ class DenonMarantzClient:
 
     @staticmethod
     def _parse_volume(raw: str) -> float:
-        value = raw.replace("MV", "")
+        value = raw.upper().replace("MV", "").strip()
+        digits = ""
+        for char in value:
+            if char.isdigit():
+                digits += char
+            else:
+                break
+        if len(digits) < 2:
+            return 0.0
         try:
-            return max(0.0, min(1.0, int(value[:2]) / 100.0))
+            absolute = float(digits[:2])
+            if len(digits) >= 3:
+                # Third digit is the half-step tenth: MV40=40.0, MV405=40.5
+                absolute += int(digits[2]) / 10.0
+            return max(0.0, min(1.0, absolute / 100.0))
         except (TypeError, ValueError, IndexError):
             return 0.0
 
