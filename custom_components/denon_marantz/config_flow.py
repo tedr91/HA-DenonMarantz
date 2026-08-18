@@ -4,10 +4,8 @@ import logging
 from urllib.parse import urlparse
 
 import voluptuous as vol
-
 from homeassistant import config_entries
-from homeassistant.components import dhcp
-from homeassistant.components import ssdp
+from homeassistant.components import dhcp, ssdp
 from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.selector import (
@@ -27,6 +25,8 @@ from .const import (
     DEFAULT_PORT,
     DOMAIN,
 )
+from .identity import async_probe_identity
+from .migration import stable_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ UPNP_FRIENDLY_NAME_KEYS = ("friendlyName", "friendly_name", "upnp_friendly_name"
 
 
 class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    VERSION = 1
+    VERSION = 2
 
     def __init__(self) -> None:
         self._discovered_host: str | None = None
@@ -45,19 +45,38 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
         if user_input is not None:
-            self._async_abort_entries_match({CONF_HOST: user_input[CONF_HOST]})
-            await self.async_set_unique_id(user_input[CONF_HOST])
-            self._abort_if_unique_id_configured()
+            host = user_input[CONF_HOST]
+            try:
+                identity = await async_probe_identity(host)
+            except Exception:  # noqa: BLE001
+                identity = None
+            if identity is None:
+                return self.async_show_form(
+                    step_id="user",
+                    data_schema=self._user_schema(user_input),
+                    errors={"base": "cannot_connect"},
+                )
+            await self.async_set_unique_id(identity.stable_id)
+            self._abort_if_unique_id_configured(updates={CONF_HOST: host})
             return self.async_create_entry(title=user_input[CONF_NAME], data=user_input)
 
-        schema = vol.Schema(
+        return self.async_show_form(step_id="user", data_schema=self._user_schema())
+
+    @staticmethod
+    def _user_schema(defaults: dict | None = None) -> vol.Schema:
+        defaults = defaults or {}
+        host_field = (
+            vol.Required(CONF_HOST, default=defaults[CONF_HOST])
+            if CONF_HOST in defaults
+            else vol.Required(CONF_HOST)
+        )
+        return vol.Schema(
             {
-                vol.Required(CONF_NAME, default=DEFAULT_NAME): str,
-                vol.Required(CONF_HOST): str,
-                vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
+                vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, DEFAULT_NAME)): str,
+                host_field: str,
+                vol.Required(CONF_PORT, default=defaults.get(CONF_PORT, DEFAULT_PORT)): int,
             }
         )
-        return self.async_show_form(step_id="user", data_schema=schema)
 
     async def async_step_ssdp(self, discovery_info: ssdp.SsdpServiceInfo) -> FlowResult:
         st = self._get_ssdp_value(discovery_info, ssdp.ATTR_SSDP_ST, "ssdp_st")
@@ -71,9 +90,11 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         model = self._get_upnp_value(discovery_info, UPNP_MODEL_NAME_KEYS)
         device_type = self._get_upnp_value(discovery_info, UPNP_DEVICE_TYPE_KEYS)
         friendly_name = self._get_upnp_value(discovery_info, UPNP_FRIENDLY_NAME_KEYS)
+        serial = self._get_upnp_value(discovery_info, ("serialNumber", "upnp_serial"))
 
         _LOGGER.debug(
-            "SSDP discovery candidate: st=%s usn=%s location=%s manufacturer=%s model=%s device_type=%s friendly_name=%s",
+            "SSDP discovery candidate: st=%s usn=%s location=%s manufacturer=%s "
+            "model=%s device_type=%s friendly_name=%s",
             st,
             usn,
             location,
@@ -90,13 +111,16 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         parsed = urlparse(location)
         host = parsed.hostname
         if not host:
-            _LOGGER.debug("SSDP discovery rejected: unable to parse host from location=%s", location)
+            _LOGGER.debug(
+                "SSDP discovery rejected: unable to parse host from location=%s", location
+            )
             return self.async_abort(reason="cannot_connect")
 
         self._async_abort_entries_match({CONF_HOST: host})
 
-        await self.async_set_unique_id(host)
-        self._abort_if_unique_id_configured()
+        advertised_identity = stable_id(model, serial)
+        await self.async_set_unique_id(advertised_identity or host)
+        self._abort_if_unique_id_configured(updates={CONF_HOST: host})
 
         self._discovered_host = host
         self._discovered_name = friendly_name or f"{DEFAULT_NAME} ({host})"
@@ -124,9 +148,8 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="cannot_connect")
 
         self._async_abort_entries_match({CONF_HOST: host})
-
         await self.async_set_unique_id(host)
-        self._abort_if_unique_id_configured()
+        self._abort_if_unique_id_configured(updates={CONF_HOST: host})
 
         self._discovered_host = host
         self._discovered_name = hostname or f"{DEFAULT_NAME} ({host})"
@@ -150,6 +173,14 @@ class DenonMarantzConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_HOST: self._discovered_host,
                 CONF_PORT: DEFAULT_PORT,
             }
+            try:
+                identity = await async_probe_identity(self._discovered_host)
+            except Exception:  # noqa: BLE001
+                identity = None
+            if identity is None:
+                return self.async_abort(reason="cannot_connect")
+            await self.async_set_unique_id(identity.stable_id, raise_on_progress=False)
+            self._abort_if_unique_id_configured(updates={CONF_HOST: self._discovered_host})
             return self.async_create_entry(title=entry_data[CONF_NAME], data=entry_data)
 
         self.context["title_placeholders"] = {
@@ -259,8 +290,8 @@ class DenonMarantzOptionsFlow(config_entries.OptionsFlow):
         return []
 
     def _available_source_labels(self) -> list[str]:
-        data = self.hass.data.get(DOMAIN, {}).get(self._config_entry.entry_id)
-        client = data.get("client") if data else None
+        runtime = getattr(self._config_entry, "runtime_data", None)
+        client = runtime.client if runtime is not None else None
         if client is not None:
             try:
                 return client.available_source_labels()

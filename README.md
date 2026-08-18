@@ -62,3 +62,16 @@ Denon and Marantz remain trademarks of their respective owners.
 - Default AVR control port is typically `23` (telnet-like protocol).
 - This is an MVP scaffold intended as a base for protocol expansion.
 - Polling uses last-known-state fallback during transient connection failures.
+
+## Registry identity migration
+
+Existing installations migrate from host- and config-entry-based registry identities
+to the receiver's normalized model and serial number. Entity unique IDs migrate before
+the device identifier, preserving entity IDs, device names, areas, labels, and config
+entry titles. Duplicate stale rows are removed only when a current entity already owns
+the stable target identity.
+
+Manual, SSDP, and DHCP setup now confirm the same hardware identity over the receiver's
+HTTP API before creating an entry. This prevents a DHCP address change from offering the
+same receiver as a new integration. If an existing receiver is offline during migration,
+Home Assistant leaves the entry unchanged and retries on a later restart.

@@ -14,7 +14,6 @@ from .const import (
     DYNAMIC_COMPRESSION_OPTIONS,
     DYNAMIC_VOLUME_OPTIONS,
     LOUDNESS_OPTIONS,
-    DOMAIN,
 )
 from .coordinator import DenonMarantzDataUpdateCoordinator
 from .denon_protocol import DenonMarantzClient
@@ -26,9 +25,8 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    data = hass.data[DOMAIN][entry.entry_id]
-    coordinator: DenonMarantzDataUpdateCoordinator = data["coordinator"]
-    client: DenonMarantzClient = data["client"]
+    coordinator = entry.runtime_data.coordinator
+    client = entry.runtime_data.client
     entities: list[SelectEntity] = [
         DenonMarantzInputSourceSelect(entry, coordinator, client),
     ]
@@ -60,9 +58,9 @@ class DenonMarantzInputSourceSelect(
     ) -> None:
         super().__init__(coordinator)
         self._client = client
-        self._attr_unique_id = f"{entry.entry_id}_input_source"
+        self._attr_unique_id = f"{coordinator.identity.stable_id}_input_source"
         self._attr_name = "Input Source"
-        self._attr_device_info = build_device_info(entry)
+        self._attr_device_info = build_device_info(coordinator)
 
     @property
     def options(self) -> list[str]:
@@ -110,10 +108,10 @@ class DenonMarantzDynamicVolumeSelect(
     ) -> None:
         super().__init__(coordinator)
         self._client = client
-        self._attr_unique_id = f"{entry.entry_id}_dynamic_volume"
+        self._attr_unique_id = f"{coordinator.identity.stable_id}_dynamic_volume"
         self._attr_name = "Dynamic Volume"
         self._attr_options = DYNAMIC_VOLUME_OPTIONS
-        self._attr_device_info = build_device_info(entry)
+        self._attr_device_info = build_device_info(coordinator)
 
     @property
     def current_option(self) -> str | None:
@@ -150,10 +148,10 @@ class DenonMarantzDialogueEnhancerSelect(
     ) -> None:
         super().__init__(coordinator)
         self._client = client
-        self._attr_unique_id = f"{entry.entry_id}_dialogue_enhancer"
+        self._attr_unique_id = f"{coordinator.identity.stable_id}_dialogue_enhancer"
         self._attr_name = "Dialogue Enhancer"
         self._attr_options = DIALOGUE_ENHANCER_OPTIONS
-        self._attr_device_info = build_device_info(entry)
+        self._attr_device_info = build_device_info(coordinator)
 
     @property
     def current_option(self) -> str | None:
@@ -190,10 +188,10 @@ class DenonMarantzDynamicCompressionSelect(
     ) -> None:
         super().__init__(coordinator)
         self._client = client
-        self._attr_unique_id = f"{entry.entry_id}_dynamic_compression"
+        self._attr_unique_id = f"{coordinator.identity.stable_id}_dynamic_compression"
         self._attr_name = "Dynamic Compression"
         self._attr_options = DYNAMIC_COMPRESSION_OPTIONS
-        self._attr_device_info = build_device_info(entry)
+        self._attr_device_info = build_device_info(coordinator)
 
     @property
     def current_option(self) -> str | None:
@@ -230,10 +228,10 @@ class DenonMarantzLoudnessSelect(
     ) -> None:
         super().__init__(coordinator)
         self._client = client
-        self._attr_unique_id = f"{entry.entry_id}_loudness"
+        self._attr_unique_id = f"{coordinator.identity.stable_id}_loudness"
         self._attr_name = "Loudness"
         self._attr_options = LOUDNESS_OPTIONS
-        self._attr_device_info = build_device_info(entry)
+        self._attr_device_info = build_device_info(coordinator)
 
     @property
     def current_option(self) -> str | None:

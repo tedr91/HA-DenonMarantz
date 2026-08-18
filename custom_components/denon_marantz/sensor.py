@@ -11,7 +11,6 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import (
     CONF_ADD_EXTENDED_ENTITIES,
     DEFAULT_ADD_EXTENDED_ENTITIES,
-    DOMAIN,
     STATUS_SENSOR_COMMANDS,
 )
 from .coordinator import DenonMarantzDataUpdateCoordinator
@@ -23,8 +22,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    data = hass.data[DOMAIN][entry.entry_id]
-    coordinator: DenonMarantzDataUpdateCoordinator = data["coordinator"]
+    coordinator = entry.runtime_data.coordinator
 
     entities: list[SensorEntity] = [
         DenonMarantzSoundModeSensor(entry, coordinator),
@@ -55,8 +53,8 @@ class DenonMarantzSoundModeSensor(
         coordinator: DenonMarantzDataUpdateCoordinator,
     ) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_sound_mode"
-        self._attr_device_info = build_device_info(entry)
+        self._attr_unique_id = f"{coordinator.identity.stable_id}_sound_mode"
+        self._attr_device_info = build_device_info(coordinator)
 
     @property
     def native_value(self) -> str | None:
@@ -81,8 +79,8 @@ class DenonMarantzStatusSensor(
         super().__init__(coordinator)
         self._sensor_key = sensor_key
         self._attr_translation_key = sensor_key
-        self._attr_unique_id = f"{entry.entry_id}_{sensor_key}"
-        self._attr_device_info = build_device_info(entry)
+        self._attr_unique_id = f"{coordinator.identity.stable_id}_{sensor_key}"
+        self._attr_device_info = build_device_info(coordinator)
 
     @property
     def native_value(self) -> str | None:
@@ -110,8 +108,8 @@ class DenonMarantzActiveSpeakersSensor(
         coordinator: DenonMarantzDataUpdateCoordinator,
     ) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_active_speakers"
-        self._attr_device_info = build_device_info(entry)
+        self._attr_unique_id = f"{coordinator.identity.stable_id}_active_speakers"
+        self._attr_device_info = build_device_info(coordinator)
 
     @property
     def native_value(self) -> str | None:

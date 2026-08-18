@@ -8,10 +8,16 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .const import DOMAIN
 from .denon_protocol import DenonMarantzClient
+from .identity import DenonMarantzIdentity
 
 
 class DenonMarantzDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    def __init__(self, hass: HomeAssistant, client: DenonMarantzClient) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        client: DenonMarantzClient,
+        identity: DenonMarantzIdentity,
+    ) -> None:
         super().__init__(
             hass,
             logger=client.logger,
@@ -19,6 +25,7 @@ class DenonMarantzDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             update_interval=timedelta(seconds=5),
         )
         self.client = client
+        self.identity = identity
         self._last_successful_data: dict[str, Any] | None = None
         self._consecutive_failures = 0
 
@@ -32,7 +39,8 @@ class DenonMarantzDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._consecutive_failures += 1
             if self._last_successful_data is not None:
                 self.logger.warning(
-                    "AVR update failed (%s). Returning cached state after %s consecutive failure(s).",
+                    "AVR update failed (%s). Returning cached state after %s "
+                    "consecutive failure(s).",
                     err,
                     self._consecutive_failures,
                 )

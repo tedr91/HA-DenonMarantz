@@ -1,19 +1,40 @@
 from __future__ import annotations
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DEFAULT_NAME, DOMAIN
+from .const import DOMAIN
+from .coordinator import DenonMarantzDataUpdateCoordinator
 
 
-def build_device_info(entry: ConfigEntry) -> DeviceInfo:
-    host = str(entry.data.get(CONF_HOST, "")).lower()
-    name = entry.data.get(CONF_NAME) or DEFAULT_NAME
+class DenonMarantzEntity(CoordinatorEntity[DenonMarantzDataUpdateCoordinator]):
+    """Base class for Denon/Marantz entities."""
 
+    _attr_has_entity_name = True
+
+    def __init__(self, coordinator: DenonMarantzDataUpdateCoordinator) -> None:
+        super().__init__(coordinator)
+        identity = coordinator.identity
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, identity.stable_id)},
+            name=identity.name or None,
+            manufacturer=identity.manufacturer,
+            model=identity.model,
+            serial_number=identity.serial,
+            configuration_url=f"http://{coordinator.client.host}",
+        )
+
+
+def build_device_info(
+    coordinator: DenonMarantzDataUpdateCoordinator,
+) -> DeviceInfo:
+    """Build shared device metadata for existing platform entities."""
+    identity = coordinator.identity
     return DeviceInfo(
-        identifiers={(DOMAIN, host)},
-        name=name,
-        manufacturer="Denon / Marantz",
-        model="AV Receiver",
+        identifiers={(DOMAIN, identity.stable_id)},
+        name=identity.name or None,
+        manufacturer=identity.manufacturer,
+        model=identity.model,
+        serial_number=identity.serial,
+        configuration_url=f"http://{coordinator.client.host}",
     )
