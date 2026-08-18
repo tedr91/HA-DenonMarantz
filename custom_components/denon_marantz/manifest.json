@@ -5,9 +5,36 @@
     "@tedr91"
   ],
   "config_flow": true,
+  "dhcp": [
+    {
+      "hostname": "*denon*"
+    },
+    {
+      "hostname": "*Denon*"
+    },
+    {
+      "hostname": "*DENON*"
+    },
+    {
+      "hostname": "*marantz*"
+    },
+    {
+      "hostname": "*Marantz*"
+    },
+    {
+      "hostname": "*MARANTZ*"
+    }
+  ],
   "documentation": "https://github.com/tedr91/HA-DenonMarantz",
   "integration_type": "device",
   "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/tedr91/HA-DenonMarantz/issues",
+  "loggers": [
+    "custom_components.denon_marantz"
+  ],
+  "requirements": [
+    "denonavr==1.3.3"
+  ],
   "ssdp": [
     {
       "st": "upnp:rootdevice",
@@ -58,29 +85,5 @@
       "manufacturer": "Marantz"
     }
   ],
-  "dhcp": [
-    {
-      "hostname": "*denon*"
-    },
-    {
-      "hostname": "*Denon*"
-    },
-    {
-      "hostname": "*DENON*"
-    },
-    {
-      "hostname": "*marantz*"
-    },
-    {
-      "hostname": "*Marantz*"
-    },
-    {
-      "hostname": "*MARANTZ*"
-    }
-  ],
-  "loggers": [
-    "custom_components.denon_marantz"
-  ],
-  "requirements": [],
-  "version": "1.0.3"
+  "version": "1.0.5"
 }

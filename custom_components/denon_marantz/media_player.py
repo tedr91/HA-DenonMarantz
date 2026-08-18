@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DEFAULT_INPUT_SOURCES, DOMAIN
+from .const import DEFAULT_INPUT_SOURCES
 from .coordinator import DenonMarantzDataUpdateCoordinator
 from .denon_protocol import DenonMarantzClient
 from .entity import build_device_info
@@ -22,9 +22,8 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    data = hass.data[DOMAIN][entry.entry_id]
-    coordinator: DenonMarantzDataUpdateCoordinator = data["coordinator"]
-    client: DenonMarantzClient = data["client"]
+    coordinator = entry.runtime_data.coordinator
+    client = entry.runtime_data.client
     async_add_entities([DenonMarantzMediaPlayer(entry, coordinator, client)])
 
 
@@ -50,8 +49,8 @@ class DenonMarantzMediaPlayer(
         super().__init__(coordinator)
         self._client = client
         self._attr_name = entry.data.get(CONF_NAME)
-        self._attr_unique_id = entry.entry_id
-        self._attr_device_info = build_device_info(entry)
+        self._attr_unique_id = coordinator.identity.stable_id
+        self._attr_device_info = build_device_info(coordinator)
 
     @property
     def state(self) -> MediaPlayerState:

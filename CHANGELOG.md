@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.5 - 2026-08-18
+
+### Changed
+
+- Config entries, devices, and entities now use the receiver's normalized model and serial number instead of its host or config entry ID.
+- Manual, SSDP, and DHCP setup now converge on the receiver identity read through the Denon HTTP API.
+- Per-entry runtime state now uses typed `ConfigEntry.runtime_data`.
+
+### Fixed
+
+- Prevented duplicate integrations and orphaned registry rows after DHCP address changes.
+- Added safe stale-device removal and collision-aware entity/device registry migration.
+- Updated HACS and Hassfest metadata and declared the `denonavr` runtime dependency.
+
 ## 1.0.3 - 2026-06-14
 
 ### Added

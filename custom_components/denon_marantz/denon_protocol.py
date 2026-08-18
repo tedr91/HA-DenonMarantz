@@ -122,7 +122,9 @@ class DenonMarantzClient:
     ) -> str:
         normalized_prefixes: tuple[str, ...] | None = None
         if expected_prefixes:
-            normalized_prefixes = tuple(prefix.strip() for prefix in expected_prefixes if prefix.strip())
+            normalized_prefixes = tuple(
+                prefix.strip() for prefix in expected_prefixes if prefix.strip()
+            )
 
         return await self._async_send(
             command=command,
@@ -159,14 +161,16 @@ class DenonMarantzClient:
 
             try:
                 response = await asyncio.wait_for(self._reader.readuntil(b"\r"), timeout=remaining)
-            except TimeoutError:
+            except TimeoutError as err:
                 if allow_timeout:
                     self.logger.debug(
                         "No immediate AVR response for %s; continuing without acknowledgement",
                         command,
                     )
                     return ""
-                raise TimeoutError(f"Timeout waiting for response to '{command}'")
+                raise TimeoutError(
+                    f"Timeout waiting for response to '{command}'"
+                ) from err
 
             decoded = response.decode("ascii", errors="ignore").strip()
             upper = decoded.upper()
@@ -275,7 +279,9 @@ class DenonMarantzClient:
             "muted": bool(mute_raw and mute_raw.upper().endswith("ON")),
             "sound_mode": self._strip_prefix(sound_mode_raw, "MS"),
             "dynamic_eq": (
-                self._parse_on_off_status(self._strip_prefix(dynamic_eq_raw, DYNAMIC_EQ_RESPONSE_PREFIX))
+                self._parse_on_off_status(
+                    self._strip_prefix(dynamic_eq_raw, DYNAMIC_EQ_RESPONSE_PREFIX)
+                )
                 if self._include_extended_entities
                 else None
             ),
@@ -296,7 +302,9 @@ class DenonMarantzClient:
             ),
             "dynamic_compression": (
                 self._parse_option_status(
-                    self._strip_prefix(dynamic_compression_raw, DYNAMIC_COMPRESSION_RESPONSE_PREFIX),
+                    self._strip_prefix(
+                        dynamic_compression_raw, DYNAMIC_COMPRESSION_RESPONSE_PREFIX
+                    ),
                     DYNAMIC_COMPRESSION_OPTIONS,
                 )
                 if self._include_extended_entities
@@ -366,7 +374,9 @@ class DenonMarantzClient:
                     break
 
                 try:
-                    response = await asyncio.wait_for(self._reader.readuntil(b"\r"), timeout=remaining)
+                    response = await asyncio.wait_for(
+                        self._reader.readuntil(b"\r"), timeout=remaining
+                    )
                 except TimeoutError:
                     break
 
@@ -436,7 +446,9 @@ class DenonMarantzClient:
                     break
 
                 try:
-                    response = await asyncio.wait_for(self._reader.readuntil(b"\r"), timeout=remaining)
+                    response = await asyncio.wait_for(
+                        self._reader.readuntil(b"\r"), timeout=remaining
+                    )
                 except TimeoutError:
                     break
 
@@ -485,9 +497,7 @@ class DenonMarantzClient:
             return None
 
         bed = sum(
-            1
-            for code in codes
-            if code not in SUBWOOFER_CHANNELS and code not in HEIGHT_CHANNELS
+            1 for code in codes if code not in SUBWOOFER_CHANNELS and code not in HEIGHT_CHANNELS
         )
         subwoofers = sum(1 for code in codes if code in SUBWOOFER_CHANNELS)
         heights = sum(1 for code in codes if code in HEIGHT_CHANNELS)
@@ -534,11 +544,7 @@ class DenonMarantzClient:
         if not self._input_filter_tokens:
             return options
 
-        return [
-            option
-            for option in options
-            if option.casefold() in self._input_filter_tokens
-        ]
+        return [option for option in options if option.casefold() in self._input_filter_tokens]
 
     @staticmethod
     def _parse_input_filter(raw_filter: list[str] | None) -> tuple[str, ...]:
